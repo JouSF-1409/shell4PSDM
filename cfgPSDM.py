@@ -23,7 +23,7 @@ setxxx函数本意通过解包来实现比较方便的格式化，未来可能�
 class cfg_m660q:
     ref_model:str="cwbq"
     ray:str="mray_cwbq.dat"      # 射线路径文件
-    m6690q_out:str="m660q_cwbq_Pcs1.out"   # 输出文件名
+    m660q_out:str="m660q_cwbq_Pcs1.out"   # 输出文件名
     iflat:int=1           # 是否做展平变换，0表不做，1表做
     itype:int=1       # 计算震相的类型 >0表示Ps，<0 表示Sp
     #,"LayerCount",
@@ -301,20 +301,20 @@ def setcfg_binr_vary_scan_n(cfg:cfg_binr_vary_scan_n, path):
 #
 #    ]
 #)
-default_cfg_Hdpming = cfg_Hdpmig(
-    0,0,1.0,
-    0.01,1.2,0,40,
-    351,800,1024,800,
-    2,0.5,
-    351,1001,0.1,2048,1,
-    45,
-    40,40,
-    0,
-    "../model/cwbq",
-    "../stack/stack_inw20cw_ispwnccaz90_yb15-100vnt2_xb200_dx2_norm0_nf2p5-s1_Pcs.dat",
-    "image_dx2dz05_inw20cw_ispwnccaz90_yb15-100vnt2_xb200_norm0_nf2p5-s1_Pcs_f0.01-1.20tl0r40_cwbq_nx351nz800.dat",
-    1,1
-)
+#default_cfg_Hdpming = cfg_Hdpmig(
+#    0,0,1.0,
+#    0.01,1.2,0,40,
+#    351,800,1024,800,
+#    2,0.5,
+#    351,1001,0.1,2048,1,
+#    45,
+#    40,40,
+#    0,
+#    "../model/cwbq",
+#    "../stack/stack_inw20cw_ispwnccaz90_yb15-100vnt2_xb200_dx2_norm0_nf2p5-s1_Pcs.dat",
+#    "image_dx2dz05_inw20cw_ispwnccaz90_yb15-100vnt2_xb200_norm0_nf2p5-s1_Pcs_f0.01-1.20tl0r40_cwbq_nx351nz800.dat",
+#    1,1
+#)
 @dataclass
 class cfg_Hdpmig:
        # 方法的选择，参考速度的选取方式，真正的参考速度是选取的参考速度*vscale
