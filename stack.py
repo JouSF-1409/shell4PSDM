@@ -31,9 +31,9 @@ class pierc_new_n(cfg_Pierce_new_n):
                 proj_dir = join(path2PSDM, proj_dir)
                 if not isdir(proj_dir):
                     raise FileNotFoundError(f"subdir {proj_dir} not found")
-        if not isfile(join(proj_dir, self.name_lst)):
-            print(f"file {self.name_lst} not found, will be generated")
-            get_datalist(proj_dir)
+            if not isfile(join(proj_dir, self.name_lst)):
+                print(f"file {self.name_lst} not found, will be generated")
+                get_datalist(proj_dir)
 
     def run(self):
         # 写入配置文件
@@ -54,7 +54,7 @@ class pierc_new_n(cfg_Pierce_new_n):
     def ndw(self):
         return self._ndw
 
-    @property.setter
+    @ndw.setter
     def ndw(self, value:list):
         """
         使用list 保存5个深度值，然后根据速度模型转换到index。然后再转化为需要的str
@@ -81,7 +81,7 @@ class pierc_new_n(cfg_Pierce_new_n):
     @property
     def nw(self):
         return self._nw
-    @property.setter
+    @nw.setter
     def nw(self, value):
         # 未完成，没看懂
         if value not in [1, 2, 3, 4, 5]:
@@ -103,13 +103,14 @@ class binr_vary_scan_n(cfg_binr_vary_scan_n):
     @property
     def ninw(self):
         return self._ninw
-    @property.setter
-    def ninw(self, value:list, velmod:str):
+    @ninw.setter
+    def ninw(self, value:list):
         ### 虽然inp文件没有要求 提供velmod，但为了实现深度与坐标之间的对应，还是需要一个velmod
-        if(len(value) != 5):
-            print("best to provide 5 depths")
+        if(len(value) != 6):
+            print("best to provide 5 depths and a velmod file")
+        velmod = value.pop()
+        velmod = retryPath(velmod,funcDir=join(path2PSDM,"stack"))
         value.sort()
-        velmod=retryPath(velmod,funcDir=join(path2PSDM,"stack"))
         match=matchLayerDepth(velmod, value)
         self._ninw="    .join(match)+\n"+\
                     "\t\t\t\t"+\
