@@ -93,8 +93,8 @@ class cfg_Pierce_new_n:
     event_filt_min:int=28
     event_filt_max:int=95
     # 没搞懂的参数名称
-    nw:str ="47,3 4,4 6,5 7,6 8,7 9,8 10,9 11,10 12,11 13,12 14,13 15,14 16,15 17,16 18,17 19,18 20,19 21,20 22,21 23,22 24,23 25,24 26,25 27,26 28,27 29,28 30,29 31,30 32,31 33,32 34,33 35,34 36,35 37,36 38,37 39,38 40,39 41,40 42,41 43,42 44,43 45,44 46,45 47,46 48,47 49,48 50,49 51",
-    ndw:str ="2  6  12  23   38           32-, 100-, 207-, 407-, 666-km",
+    _nw:str ="47,3 4,4 6,5 7,6 8,7 9,8 10,9 11,10 12,11 13,12 14,13 15,14 16,15 17,16 18,17 19,18 20,19 21,20 22,21 23,22 24,23 25,24 26,25 27,26 28,27 29,28 30,29 31,30 32,31 33,32 34,33 35,34 36,35 37,36 38,37 39,38 40,39 41,40 42,41 43,42 44,43 45,44 46,45 47,46 48,47 49,48 50,49 51",
+    _ndw:str ="2  6  12  23   38           32-, 100-, 207-, 407-, 666-km",
     rfdata_path:str="../data/"  # 项目文件夹路径
     # 简便起见，这里推荐一次只计算一个项目
     num_sub:int=1      # 项目文件夹数量
@@ -168,49 +168,102 @@ def setcfg_Pierce_new_n(cfg:cfg_Pierce_new_n,path):
     except:
         raise IOError("failed while prepare Pierc_new_n")
 
-
-cfg_binr_vary_scan_n = namedtuple(
-    # 包括动校正的ccp叠加程序
-    "cfg_binr_vary_scan_n",
-    [
+@dataclass
+class cfg_binr_vary_scan_n:
     # ccp叠加剖面的划分，这里的坐标均按之前计算得到的笛卡尔坐标表示，距离为km
     # 表示剖面组 的起止点位置，step表示每次起点移动的距离
     # 如果起点的begin和end相同，则有不同的起点
-    "Descar_la_begin", "Descar_lo_begin", "Descar_la_end", "Descar_lo_end", "Descar_step",
+    Descar_la_begin:float=205.
+    Descar_lo_begin:float=-900.
+    Descar_la_end:float=205.
+    Descar_lo_end:float=-900.
+    Descar_step:100.
      # 每个剖面的设置，剖面长度，方位角范围，方位角step。同样可以获得不同的剖面
-     "Profile_len", "az_min", "az_max", "az_step",
+    Profile_len:float=700.
+    az_min:float=90.
+    az_max:float=90.
+    az_step:10.
     # 叠加窗的设置，相邻叠加窗中心点的距离，bin中最小接收函数数量，最小数量下的比率（决定了接收函数的归一化方法），UTMOST投影下研究区域的代表值
     #如果bin的单元内接收函数的个数小于least number of traces，bin的范围会根据YBIN的设置自动扩大，直到大于最大DYBIN停止外扩。
     # 振幅的归一化：当RF的个数小于rnumtra*numtra时，采用SUM()/(rnumtra*numtra) 代替SUM()/(num of RFs in stacking)，否则还是用SUM()/(num of RFs in stacking)。这样做的目的是为压制RF数目较少的叠加振幅。
-     "bins_step", "trace_num_min", "ratio_trace","UTM_zone",
+    bins_step:float=2
+    trace_num_min:float=2
+    ratio_trace:float=1
+    UTM_zone:50
     # m660q 中计算的输出表，不同深度转换波的理论到时
-    "timefile",
+    timefile:str="m660q_cwbq_Pcs1.out"
     # ccp叠加的输出文件名
-    "outpufile",
+    outpufile:str="inw20cw_ispwnccaz90_yb15-100vnt2_xb200_dx2_norm0_nf2p5-s1_Pcs"
     # 输出的每道采样点数， 采样间隔，
-     "out_trace_npts", "out_trace_dt", "temp_folder",
+    out_trace_npts:int=1001
+    out_trace_dt:float=0.1
     # nw, ninw pair?
-    "nw_pair",
+    nw_pair:str="20,1 -200,2 120,3 120,4 120,5 120,6 120,7 120,8 120,9 120,10 120,11 120,12 120,13 120,14 120,15 120,16 120,17 120,18 120,19 120,20 120"
     # Ybin 的一些设计，有些看不明白
-    "minYbin","Dybin","maxYbin",
+    minYbin:str="15,20,25,30,30,32,32,34,34,36,36,38,38,40,40,42,44,46,48,50"
+    Dybin:str="-2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,4"
+    maxYbin:str="30,40,50,60,60,65,65,70,70,75,75,80,80,80,80,85,90,90,95,100"
     # 处理过程中的临时文件夹
-    "tmpdir",
+    tmpdir:str="../temp"
     # flag = 0,1,<0; 0表用pierc_new_n的平均震中距为参考做动校正, <0为不做动校正，=1为按选择的震中距为参考做动校正
     # 由于张周提前做了动校正，这里他的内容将其关掉
-    "moveout_flag",    "moveout_gcarc",
+    moveout_flag:int=0,
+    moveout_gcarc:float=180.
     # 是否对振幅做归一化处理，0表示不做，其他的表示对每个RF单独做一次
-    "norm_flag",
+    norm_flag:int=1
     # 输出的深度坐标与对应的实际深度
-    "ninw",
+    _ninw:str="5       3    6    9    12    17          49-, 100-, 153-, 207-, 297-km"
     # 叠加的标记。 没看懂，这里推荐打开
-    "stack_flag",
-    # 没看懂，推荐为1
-    "ioutb",
+    stack_flag:int=1
+    # 没看懂，推荐为0
+    ioutb:int=0
     # piercing point data file number
-    "npief",
+    npief:int=1
     # 转换点数据信息的文件名，从pierce_new_n 这一步获得。
-    "binr_out_name"]
-)
+    binr_out_name:str="pierc_cwbq_nf2p5_wncc-s1_Pcs.dat"
+
+#cfg_binr_vary_scan_n = namedtuple(
+#    # 包括动校正的ccp叠加程序
+#    "cfg_binr_vary_scan_n",
+#    [
+#    # ccp叠加剖面的划分，这里的坐标均按之前计算得到的笛卡尔坐标表示，距离为km
+#    # 表示剖面组 的起止点位置，step表示每次起点移动的距离
+#    # 如果起点的begin和end相同，则有不同的起点
+#    "Descar_la_begin", "Descar_lo_begin", "Descar_la_end", "Descar_lo_end", "Descar_step",
+#     # 每个剖面的设置，剖面长度，方位角范围，方位角step。同样可以获得不同的剖面
+#     "Profile_len", "az_min", "az_max", "az_step",
+#    # 叠加窗的设置，相邻叠加窗中心点的距离，bin中最小接收函数数量，最小数量下的比率（决定了接收函数的归一化方法），UTMOST投影下研究区域的代表值
+#    #如果bin的单元内接收函数的个数小于least number of traces，bin的范围会根据YBIN的设置自动扩大，直到大于最大DYBIN停止外扩。
+#    # 振幅的归一化：当RF的个数小于rnumtra*numtra时，采用SUM()/(rnumtra*numtra) 代替SUM()/(num of RFs in stacking)，否则还是用SUM()/(num of RFs in stacking)。这样做的目的是为压制RF数目较少的叠加振幅。
+#     "bins_step", "trace_num_min", "ratio_trace","UTM_zone",
+#    # m660q 中计算的输出表，不同深度转换波的理论到时
+#    "timefile",
+#    # ccp叠加的输出文件名
+#    "outpufile",
+#    # 输出的每道采样点数， 采样间隔，
+#     "out_trace_npts", "out_trace_dt", "temp_folder",
+#    # nw, ninw pair?
+#    "nw_pair",
+#    # Ybin 的一些设计，有些看不明白
+#    "minYbin","Dybin","maxYbin",
+#    # 处理过程中的临时文件夹
+#    "tmpdir",
+#    # flag = 0,1,<0; 0表用pierc_new_n的平均震中距为参考做动校正, <0为不做动校正，=1为按选择的震中距为参考做动校正
+#    # 由于张周提前做了动校正，这里他的内容将其关掉
+#    "moveout_flag",    "moveout_gcarc",
+#    # 是否对振幅做归一化处理，0表示不做，其他的表示对每个RF单独做一次
+#    "norm_flag",
+#    # 输出的深度坐标与对应的实际深度
+#    "ninw",
+#    # 叠加的标记。 没看懂，这里推荐打开
+#    "stack_flag",
+#    # 没看懂，推荐为1
+#    "ioutb",
+#    # piercing point data file number
+#    "npief",
+#    # 转换点数据信息的文件名，从pierce_new_n 这一步获得。
+#    "binr_out_name"]
+#)
 
 def setcfg_binr_vary_scan_n(cfg:cfg_binr_vary_scan_n, path):
     """
@@ -342,7 +395,7 @@ class cfg_Hdpmig:
         nt0:int=2048
         ntb:int=1
         # 只有在hybscreen 时才会用到，只能为15，45，60 其中的一个
-        FD:int=45
+        _FD:int=45
         # 空间剖面上向两侧平滑的点数
         nxleft:int=40
         nxright:int=40

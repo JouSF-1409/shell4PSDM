@@ -5,107 +5,144 @@
 """
 from glob import glob
 from os import listdir
-from os.path import isdir,join
+from subprocess import Popen, PIPE
+from os.path import isdir,join, isfile
 from pathlib import Path
+from math import floor
 
 from init import path2PSDM
 from cfgPSDM import cfg_Pierce_new_n, cfg_binr_vary_scan_n
+from util import _str_pierce_new_n, _str_binr_vary_scan_n,get_datalist, isAsciiVelmod, retryPath,matchLayerDepth
 
-def get_datalist(path:str, match_rule='*.eqr'):
-    """
-    一个非常简单的，get_datalist.sh替代品
-    主要是不想写py 调用shell，文件夹太乱
-    """
-    if not isdir(path):
-        path = join(path2PSDM,path)
-        if not isdir(path):
-            raise FileNotFoundError(f"rf directory {path} not found")
-
-    l = open(join(path, "datalist.txt"), "w")
-    # then we find the rf dir
-
-    # 这段 纯炫技， 目前没有比较好的方法只遍历文件夹，不遍历文件夹的内容。
-    # 考虑到文件的数量可能会比较多，listdir 未来可能会改为迭代器
-    subdirs = [d for d in listdir(path) if isdir(join(path, d))]
-    print(subdirs)
-    for subdir in subdirs:
-        eqr_files = glob(join(path, subdir, match_rule))
-
-        # f-string 有一定的约束
-        tmp = "{}\n{}\n{}\n".format(
-            subdir,
-            len(eqr_files),
-            "\n".join([Path(f).name for f in eqr_files])
-        )
-        l.write(tmp)
-    l.close()
 
 
 
 class pierc_new_n(cfg_Pierce_new_n):
+
+    def check(self):
+        isAsciiVelmod(self.ref_model,funcDir=join(path2PSDM,"stack"))
+        cmd = join(path2PSDM, "stack", "pierc_new_n")
+        if not isfile(cmd):
+            raise FileNotFoundError("make pierc_new_n first")
+        # 检查datalist 文件( 未测试过PSDM 是否支持多个项目一起使用
+        for _i in range(self.num_sub):
+            proj_dir = join(self.rfdata_path,self.name_sub.split()[_i])
+            if not isdir(proj_dir):
+                proj_dir = join(path2PSDM, proj_dir)
+                if not isdir(proj_dir):
+                    raise FileNotFoundError(f"subdir {proj_dir} not found")
+        if not isfile(join(proj_dir, self.name_lst)):
+            print(f"file {self.name_lst} not found, will be generated")
+            get_datalist(proj_dir)
+
+    def run(self):
+        # 写入配置文件
+        l = open(join(path2PSDM, "stack", "pierc_new_n.in"), "w")
+        l.write(self.__str__())
+        l.close()
+        cmd = join(path2PSDM, "stack", "pierc_new_n")
+        # 调用抄自张周，未经测试
+        proc0 = Popen(
+                cmd,
+                stdin=None,
+                stdout=PIPE,
+                stderr=PIPE,
+                shell=True)
+        outinfo02, errinfo02 = proc0.communicate()
+
+    @property
+    def ndw(self):
+        return self._ndw
+
+    @property.setter
+    def ndw(self, value:list):
+        """
+        使用list 保存5个深度值，然后根据速度模型转换到index。然后再转化为需要的str
+        """
+        if len(value) != 5:
+            raise ValueError("ndw must contains 5 depths")
+        #使用默认的降序排列
+        value.sort()
+        for _i in value:
+            if _i < 0:
+                raise ValueError("ndw must be positive")
+        
+        path = isAsciiVelmod(self.ref_model)
+        indexDepth = matchLayerDepth(path, value)
+
+        self._ndw = '   '.join(indexDepth)+\
+                    "\t\t\t"+\
+                    '-,'.join(value)+"km"
+
+    # 输入文件中选定的深度数目(NW)，
+    # 索引与对应深度(NWI(I), DEP(I), I=1,NW)。  
+    # ray number, ray indexes, corresponding depth indexes
+    # 射线数量，射线索引，对应深度索引   
+    @property
+    def nw(self):
+        return self._nw
+    @property.setter
+    def nw(self, value):
+        # 未完成，没看懂
+        if value not in [1, 2, 3, 4, 5]:
+            raise ValueError("nw must be 1, 2, 3, 4 or 5")
+        self._nw = value
+
+
     def __str__(self):
         return \
-f"* output file name: iaj\n\
-{self.pierc_out}\n\
-* the coordinate center of line: evla0,evlo0\n\
-{self.center_la:.1f}, {self.center_lo:.1f}\n\
- * output time point number: np0, irayp\n\
-{self.out_npts}      {self.sac_user_num_rayp}\n\
-* model file\n\
-{self.ref_model}\n\
-* * ivar (0: dist; 1: gcarc; 2: baz),varmin,varmax\n\
-{self.event_filt_flag}     {self.event_filt_min}     {self.event_filt_max}\n\
-* NW,(NWI(I),NWID(I),I=1,NW)\n\
-{self.nw}\n\
-* NDW(1:5): indexs in NWI for outputting piercing points at 5 depths\n\
-{self.ndw}\n\
-* directory containing RFs\n\
-{self.rfdata_path}\n\
-* number of subdirectories\n\
-{self.num_sub}\n\
-{self.name_sub}\n\
-{self.name_lst}\n\
-\n"
+_str_pierce_new_n(self)
 
 class binr_vary_scan_n(cfg_binr_vary_scan_n):
+    
+    def check(self):
+        # 好像只能检查timefile 的路径
+        cmd = join(path2PSDM,"stack")
+        retryPath(self.timefile, cmd)
+    
+    @property
+    def ninw(self):
+        return self._ninw
+    @property.setter
+    def ninw(self, value:list, velmod:str):
+        ### 虽然inp文件没有要求 提供velmod，但为了实现深度与坐标之间的对应，还是需要一个velmod
+        if(len(value) != 5):
+            print("best to provide 5 depths")
+        value.sort()
+        velmod=retryPath(velmod,funcDir=join(path2PSDM,"stack"))
+        match=matchLayerDepth(velmod, value)
+        self._ninw="    .join(match)+\n"+\
+                    "\t\t\t\t"+\
+                    "-,".join(value)+"km\n"
+
+    def run(self):
+        cmd = join(path2PSDM, "stack", "binr_vary_scan_n")
+        l = open(join(path2PSDM, "stack", "binr_vary_scan_n.inp"), "w");l.write(self.__str__());l.close()
+        proc0 = Popen(
+            cmd,
+            stdin=None,
+            stdout=PIPE,
+            stderr=PIPE,
+            shell=True)
+        outinfo02, errinfo02 = proc0.communicate()
+
+
+    def getProfile(self):
+        """
+        从配置中生成profile 信息
+        """
+        nPara=1; nRot=1;
+        if self.Descar_la_begin !=self.Descar_la_end \
+            and self.Descar_lo_begin != self.Descar_lo_end:
+            nPara = 1
+        if self.az_min != self.az_max:
+            nRot = floor((self.az_max -self.az_min)/self.az_step)+1
+        return nPara, nRot
+
+
     def __str__(self):
         return \
-f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,endla0,endlo0,dsp\n\
-{self.Descar_la_begin},{self.Descar_lo_begin},{self.Descar_la_end},{self.Descar_lo_end},{self.Descar_step}\n\
-* profile length and azimuth range and interval: xlenp,alphab,alphae,dalp\n\
-{self.Profile_len}, {self.az_min}, {self.az_maz}, {self.az_step}\n\
-* the spacing between bins, least number of traces, rnumtra, UTM_PROJECTION_ZONE(new)\n\
-{self.bins_step}     {self.trace_num_min}      {self.ratio_trace}      {self.UTM_zone}\n\
-* time file name: timefile\n\
-{self.timefile}\n\
-* output file name: outfile\n\
-{self.outpufile}\n\
-* ouput number of time samples in each trace: npt, dt\n\
-{self.out_trace_npts}     {self.out_trace_dt}\n\
-* the indexes of reference ray among 1 -- nw: ninw, (inw0(i),i=1,ninw)   \n\
-{self.nw_pair}\n\
-* minimum YBIN (km)\n\
-{self.minYbin}\n\
-* DYBIN (km)\n\
-{self.Dybin}\n\
-* maximum YBIN (km)\n\
-{self.maxYbin}\n\
-*temporary directory name to store the intermedial files (.img)\n\
-{self.tmpdir}\n\
-* moveout index: idist, gcarc1  (only useful for idist=1)\n\
-{self.moveout_flag}  {self.moveout_gcarc}\n\
-* inorm\n\
-{self.norm_flag} \n\
-* output number and depth indexes in ninw: noutd,(ioutd(i),i=1,noutd)\n\
-{self.ninw}\n\
-* output index for stacking: istack\n\
-{self.stack_flag} \n\
-* output index for gcarc, baz and p: ioutb\n\
-{self.ioutb}\n\
-* piercing point data file number: npief\n\
-{self.npief}\n\
-* input file name: infile\n\
-{self.binr_out_name}\n"
+_str_binr_vary_scan_n(self)
 
     
 if __name__ == "__main__":

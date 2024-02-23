@@ -2,33 +2,46 @@
 偏移成像的方法
 """
 
+from os.path import join,isfile
 from cfgPSDM import cfg_Hdpmig
+from init import path2PSDM
+from subprocess import Popen, PIPE
+from util import _str_hdpming,gen2pow, isAsciiVelmod
 class hdpming(cfg_Hdpmig):
+    def check(self,gen2=False):
+        # 检查道数是否相等
+        if self.nxmod != self.ntrace:
+            raise ValueError("nxmod must be equal to ntrace")
+        # 有两个参数需要做傅里叶变换，这里的*2 是为了与示例结果中的情况保持一致
+        if gen2:
+            self.nt0 = gen2pow(self.nt)*2
+            self.nx = gen2pow(self.nxmod)*2
+        if self.ifmat==0:
+            isAsciiVelmod(self.velmod, join(path2PSDM, "poststack"))
+
+    def run(self):
+        cmd = join(path2PSDM,"poststack","hdpming.x")
+
+        proc0 = Popen(
+            cmd,
+            stdin=None,
+            stdout=PIPE,
+            stderr=PIPE,
+            shell=True)
+        outinfo02, errinfo02 = proc0.communicate()
+
+    @property
+    def FD(self):
+        return self._FD
+    @property.setter
+    def FD(self,value):
+        if value not in [15, 45, 65]:
+            raise ValueError("FD value must be 15, 45 or 65")
+        else:
+            self._FD = value
     def __str__(self):
-        return \
-f"* imethod (phshift=0; phscreen=1, hybscreen: else),irefvel,vscale \n\
-{self.imethod}      {self.irefvel}     {self.vscale}\n\
-* fmin, fmax (Minimum and maximum frequencies), ifreqindl, ifreqindr\n\
-{self.fmin}    {self.fmax}    {self.ifreqindl}    {self.ifreqindr}\n\
-* nxmod, nzmod, nx, nz\n\
-{self.nxmod}    {self.nzmod}   {self.nx}     {self.nz}\n\
-* dx, dz\n\
-{self.dx}   {self.dz}\n\
-* ntrace, nt, dt (in sec.), nt0, ntb\n\
-{self.ntrace}    {self.nt}    {self.dt}    {self.nt0}    {self.ntb}\n\
-* FD method (15, 45, 65)\n\
-{self.FD}\n\
-* nxleft, nxright\n\
-{self.nxleft}    {self.nxright}\n\
-* ifmat (=0: ascii vel. file; else: binary vel. file)\n\
-{self.ifmat}\n\
-* modvelocity\n\
-{self.velmod}\n\
-* tx_data (input seismic data)\n\
-{self.tx_data}\n\
-* migdata (output imaging data)\n\
-{self.migdata}\n\
-* intrace\n\
-{self.intrace}\n\
-* first trace index: itrfirst\n\
-{self.itrfirst}\n"
+        return _str_hdpming(self)
+    
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
