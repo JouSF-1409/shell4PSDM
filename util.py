@@ -25,8 +25,6 @@ def gen2pow(n:int):
     while(power(2,rate)<n):
         rate+=1
     return power(2,rate)
-    
-
 
 def matchLayerDepth(url:str, Layers:list):
     """

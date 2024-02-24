@@ -1,5 +1,9 @@
+"""
+整个代码运行的逻辑，修改配置参数时的模板
+"""
+
 def modi(cfg,
-         modifier:dict):
+         modifier: dict):
     """
     修改cfg文件的逻辑，
     使用setattr 对配置文件进行修改
@@ -17,6 +21,4 @@ def modi(cfg,
     cfg.move()
     return cfg
 
-
-#if __name__ == "__main__":
-
+# if __name__ == "__main__":
