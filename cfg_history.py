@@ -1,14 +1,3 @@
-
-from m660q import m660q
-import os
-### 所有的配置类，都按PSDM 公开的方法进行配置
-### 这里推荐的方法是将参数配置为字典，在 runMethod.py 中 modi 前import 参数
-# 然后交给 modi 方法做运行。
-### 这个文件的存在意义是，给出一些配置的示例。后人可以根据这些文件的示例，
-# 初始化，并做简单修改。 用注释形成必要的笔记。
-# 使用字典的一个好处是，可以最小化改动，突出每次改动的内容。
-# 同时字典能兼容 json， cfg 等多种配置语言
-
 # 这里给出张周的 S波配置示例
 ###############################################################
 ZhangZhou_S_wave_m660= {
@@ -55,127 +44,57 @@ ZhangZhou_S_wave_binr = {
     "outputfile": '2022_binr_out_Qseis_1s.dat',
     "out_trace_npts" : 1001,
     "out_trace_dt" : 0.1,
-    "nw_pair" :
-
+    "nw_pair" : "20,1 -400,2 120,3 120,4 120,5 120,6 120,7 120,8 120,9 120,10 120,11 120,12 120,13 120,14 120,15 120,16 120,17 120,18 120,19 120,20 120",
+    "minYbin" :"15,20,25,30,30,32,32,34,34,36,36,38,38,40,40,42,44,46,48,50",
+    "Dybin" : "-50,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,4",
+    "tmpdir" : "../temp",
+    "moveout_flag" : 1,
+    "moveout_gcarc" : 180.,
+    "norm_flag" : 0,
+    "_ninw" : "5 6 13 16 19 36      40-, 100-, 150-, 210-, 300-km",
+    "stack_flag" : 1,
+    "npief" : 1,
+    "ioutb" : 0,
+    "binr_out_name" : "2022_binr_out_Qseis_1s"
 }
 
 ZhangZhou_S_wave_Hdpmig = {
-   "method_flag" : 0,
-   "refvel_flag" : 0,
+   "imethod" : 0,
+   "irefvel" : 0,
    "vscale" : 1.0,
-   "freq_min" : 0.03
-   "freq_max" : 0.5
-   "freq_idx_b" : 0
-   "freq_idx_e" : 40
-   "nxmod" : 21
-   "nzmod" : 1600
-   "nx" : 1024
-   "nz" : 1600
-   "dx" : 50
-   "dz" : 0.5
-   "ntrace" : 21
-   "nt" : 1001
-   "dt" : 0.1
-   "nt0" : 2048
-   "nt_step" : 1
-   "FD_ang" : 45
-   "smoothpt_left" : 4
-   "smoothpt_right" : 4
-   "mod_format_flag" : 0
-   "mig_model" : "../model/CDmod"
-   "stacked_field" : "../stack/stack_"+binr_out_name+".dat"
-   "hdpmig_out_field" = sub_name+"_" + str(freq_min)+"_"+str(freq_max)+"_hdpmig.joe.dat"
+   "fmin" : 0.03,
+   "fmax" : 0.5,
+   "ifreqindl" : 0,
+   "ifreqindr" : 40,
+   "nxmod" : 21,
+   "nzmod" : 1600,
+   "nx" : 1024,
+   "nz" : 1600,
+   "dx" : 50,
+   "dz" : 0.5,
+   "ntrace" : 21,
+   "nt" : 1001,
+   "dt" : 0.1,
+   "nt0" : 2048,
+   "ntb" : 1,
+   "_FD" : 45,
+   "nxleft" : 4,
+   "nxright" : 4,
+   "ifmat" : 0,
+   "velmod" : "../model/CDmod",
+   "tx_data" : "../stack/stack_"+"2022_binr_out_Qseis_1s"+".dat",
+   "migdata" : "QseisMig_hdpmig.joe.dat"
 }
 
 ZhangZhou_S_wave_Plot = {
-   "xlenp" : 1000
-   "npt" : 1001
-   "dt" : 0.1
-   "depth" : 800  
-   "dz" : 0.5  
-   "prolen" : 1000  
-   "dx" : 50  
+   "xlenp" : 1000,
+   "npt" : 1001,
+   "dt" : 0.1,
+   "depth" : 800  ,
+   "dz" : 0.5  ,
+   "prolen" : 1000  ,
+   "dx" : 50  ,
    "noutd" : 5
-   "yb_file" : PSDM_pro_path+"/stack/"+binr_out_name+"_yb.dat"
-   "num_file" : PSDM_pro_path+"/stack/"+binr_out_name+"_num.dat"
+   #"yb_file" : PSDM_pro_path+"/stack/"+binr_out_name+"_yb.dat",
+   #"num_file" : PSDM_pro_path+"/stack/"+binr_out_name+"_num.dat"
 }
-
-##################################################################################################
-trace_num_min = 2
-ratio_trace = 1.0
-UTM_zone = 48
-out_trace_npts = 1001
-out_trace_dt = 0.1
-temp_folder = '../temp'
-moveout_flag = 0
-moveout_gcarc = 0
-norm_flag = 1
-stack_flag = 1
-npief = 1
-out_idx_flag = 0
-binr_out_name = '2022_binr_out_Qseis_1s'
-# [binr_vary_scan_n Parameters Part End]
-
-##################################################################################################
-# [Hdpmig.x Parameters Part Begin]
-method_flag = 0
-refvel_flag = 0
-vscale = 1.0
-freq_min = 0.03
-freq_max = 0.5
-freq_idx_b = 0
-freq_idx_e = 40
-nxmod = 21
-nzmod = 1600
-nx = 1024
-nz = 1600
-dx = 50
-dz = 0.5
-ntrace = 21
-nt = 1001
-dt = 0.1
-nt0 = 2048
-nt_step = 1
-FD_ang = 45
-smoothpt_left = 4
-smoothpt_right = 4
-mod_format_flag = 0
-mig_model = "../model/CDmod"
-stacked_field = "../stack/stack_"+binr_out_name+".dat"
-hdpmig_out_field = sub_name+"_" + \
-    str(freq_min)+"_"+str(freq_max)+"_hdpmig.joe.dat"
-
-##################################################################################################
-# [Plot]
-cwdfd = os.getcwd()
-PSDM_pro_path = cwdfd+"/psdm/PSDM_qseis2022_IASP/"
-
-# plot Observation System
-sta_xy_file = PSDM_pro_path+"/stack/station.dat"
-pierce_xy_file1 = PSDM_pro_path+"/stack/depth1.dat"
-pierce_xy_file2 = PSDM_pro_path+"/stack/depth2.dat"
-pierce_xy_file3 = PSDM_pro_path+"/stack/depth3.dat"
-pierce_xy_file4 = PSDM_pro_path+"/stack/depth4.dat"
-pierce_xy_file5 = PSDM_pro_path+"/stack/depth5.dat"
-pro_xy_file = PSDM_pro_path+"/stack/"+binr_out_name+"_profile.txt"
-
-# plot CCP
-xlenp = 1000
-npt = 1001
-dt = 0.1
-depth = 800  
-dz = 0.5  # depth interval, km per grid along Z
-prolen = 1000  # profile length
-dx = 50  # trace interval, km per grid along X
-nz = int(depth/dz)  # depth number
-nx = int(prolen/dx)+1  # trace number
-Yrange = np.linspace(0, nz*dz, nz)
-Trange = np.linspace(0, npt*dt, npt)
-Xrange = np.linspace(0, xlenp, int(xlenp/dx)+1)
-noutd = 5
-numbin = int(xlenp/dx+1)
-timelen = (npt-1)*dt
-stacked_field = PSDM_pro_path+"/stack/stack_"+binr_out_name+".dat"
-yb_file = PSDM_pro_path+"/stack/"+binr_out_name+"_yb.dat"
-num_file = PSDM_pro_path+"/stack/"+binr_out_name+"_num.dat"
-LatRange = pro_xy.lat

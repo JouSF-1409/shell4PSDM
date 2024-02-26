@@ -7,17 +7,10 @@ matchLayerDepth(): 读取速度模型文件，返回深度对应的层号
 gen2pow(): 生成离给定整数最近的，2的幂次方数
 """
 
-from os.path import join, isfile, isdir
-from glob import glob
-from pathlib import Path
+from os.path import join, isfile
 
 from numpy import power
 
-
-from init import path2PSDM
-#from m660q import m660q
-#from stack import pierc_new_n, binr_vary_scan_n
-#from migrate import hdpming
 
 def gen2pow(n:int):
     rate=0
@@ -105,35 +98,7 @@ def isAsciiVelmod(url:str, cor=4,funcDir=None):
         raise IOError(f"file {url} is not a valid velocity model")
     return True
 
-def get_datalist(path:str, match_rule='*.eqr'):
-    """
-    一个非常简单的，get_datalist.sh替代品
-    主要是不想写py 调用shell，文件夹太乱
-    """
-    if not isdir(path):
-        path = join(path2PSDM,path)
-        if not isdir(path):
-            raise FileNotFoundError(f"rf directory {path} not found")
 
-    l = open(join(path, "datalist.txt"), "w")
-    # then we find the rf dir
-
-    # 这段 纯炫技， 目前没有比较好的方法只遍历文件夹，不遍历文件夹的内容。
-    # 考虑到文件的数量可能会比较多，listdir 未来可能会改为迭代器
-    #subdirs = [d for d in listdir(path) if isdir(join(path, d))]
-    subdirs = [ d for d in Path(path).iterdir() if d.is_dir()]
-    print(subdirs)
-    for subdir in subdirs:
-        eqr_files = glob(join(path, subdir, match_rule))
-
-        # f-string 有一定的约束
-        tmp = "{}\n{}\n{}\n".format(
-            subdir,
-            len(eqr_files),
-            "\n".join([Path(f).name for f in eqr_files])
-        )
-        l.write(tmp)
-    l.close()
 
 def _str_m660q(cfg):
     return \
