@@ -1,8 +1,5 @@
 
 from m660q import m660q
-from stack import pierc_new_n, binr_vary_scan_n
-from migrate import hdpming
-
 
 ### 所有的配置类，都按PSDM 公开的方法进行配置
 ### 这里推荐的方法是将参数配置为字典，在 runMethod.py 中 modi 前import 参数
