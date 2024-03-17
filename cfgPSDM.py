@@ -130,7 +130,7 @@ class cfg_Hdpmig:
     ifreqindr: float = 40
     # 道数， 深度， 剖面与深度方向上，大于道数和深度的最小2的整数倍点，
     nxmod: int = 351
-    nzmod: int = 1001
+    nzmod: int = 800
     nx: int = 1024
     nz: int = 800
     # 剖面上道的采样间隔， 垂直方向上的深度间隔
@@ -254,7 +254,7 @@ f"* imethod (phshift=0; phscreen=1, hybscreen: else),irefvel,vscale \n\
 * ntrace, nt, dt (in sec.), nt0, ntb\n\
 {cfg.ntrace}    {cfg.nt}    {cfg.dt}    {cfg.nt0}    {cfg.ntb}\n\
 * FD method (15, 45, 65)\n\
-{cfg.FD}\n\
+{cfg._FD}\n\
 * nxleft, nxright\n\
 {cfg.nxleft}    {cfg.nxright}\n\
 * ifmat (=0: ascii vel. file; else: binary vel. file)\n\
