@@ -126,16 +126,15 @@ binr.out_trace_npts = 900
 binr.bins_step = 10
 
 # 叠加设置,归一化和动校正在这里标注
-
+binr.moveout_flag = 0
 ## 输入输出文件
 # m660q的输出文件
 binr.timefile = m660q.m660q_out
 # pierc 的输出文件
 binr.binr_out_name = pierce.pierc_out
 # ccp的输出文件
-binr.outpufile = join(psdm_trans,
-                          # 文件名
-                          f"ccp_stack_{time.now().strftime('%Y.%m.%d')}.dat")
+# 这里不能使用相对路径或者绝对路径，因为结果 会在bin 文件夹下面以stack_ 为首表示
+binr.outpufile = f"ccp_stack_{time.now().strftime('%Y.%m.%d')}.dat"
 
 
 runner_psdm(path2PSDM,binr)
