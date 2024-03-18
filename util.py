@@ -1,17 +1,76 @@
 """
 提供一些辅助功能，一个垃圾桶
-isAsciiVelmod(): 简单分析是否为所需的五列速度模型
 get_datalist(): 生成datalist.txt文件，get_datalist.sh的替代品
 genRayPath(): 生成转换波位置文件
 matchLayerDepth(): 读取速度模型文件，返回深度对应的层号
 gen2pow(): 生成离给定整数最近的，2的幂次方数
+get_datalist(): 最简单的， get_datalist.sh的替代品
 """
-
-from os.path import join, isfile
+from datetime import datetime
+from os.path import join, isfile, isdir, exists
+from glob import glob
+from pathlib import Path
+from shutil import copy
+from subprocess import Popen, PIPE
+import subprocess
 
 from numpy import power
 
+from cfgPSDM import cfg_m660q, cfg_Pierce_new_n, cfg_binr_vary_scan_n, cfg_Hdpmig
 
+def paser_flesh(path2PSDM:str):
+    """
+    检查各路径和文件是否存在并成立
+    """
+    bins=["binr_vary_scan_n","hdpmig.x","M660q_model","pierc_new_n"]
+    psdm_bin = join(path2PSDM, "bin")
+    psdm_default_cfg = join(path2PSDM, "model")
+    psdm_cfg_history = join(path2PSDM, "history")
+    psdm_trans = join(path2PSDM,'trans')
+    psdm_tmp = join(path2PSDM, 'tmp')
+    bins = [join(psdm_bin, _i) for _i in bins]
+    for _i in bins:
+        if not isfile(_i):
+            raise FileNotFoundError("plz make all before run psdm")
+    for _i in (psdm_cfg_history, psdm_tmp, psdm_trans):
+        if not exists(_i):
+            Path(_i).mkdir(exist_ok=True)
+
+def paser_backup(path2PSDM:str):
+    """
+    备份生成的所有文件
+    """
+
+path2PSDM=""
+def get_datalist(path:str, match_rule='*.eqr'):
+    """
+    一个非常简单的，get_datalist.sh替代品
+    主要是不想写py 调用shell，文件夹太乱
+    """
+    if not isdir(path):
+        path = join(path2PSDM,path)
+        if not isdir(path):
+            raise FileNotFoundError(f"rf directory {path} not found")
+
+    l = open(join(path, "datalist.txt"), "w")
+    # then we find the rf dir
+
+    # 这段 纯炫技， 目前没有比较好的方法只遍历文件夹，不遍历文件夹的内容。
+    # 考虑到文件的数量可能会比较多，listdir 未来可能会改为迭代器
+    #subdirs = [d for d in listdir(path) if isdir(join(path, d))]
+    subdirs = [ d for d in Path(path).iterdir() if d.is_dir()]
+    print(subdirs)
+    for subdir in subdirs:
+        eqr_files = glob(join(path, subdir, match_rule))
+
+        # f-string 有一定的约束
+        tmp = "{}\n{}\n{}\n".format(
+            subdir,
+            len(eqr_files),
+            "\n".join([Path(f).name for f in eqr_files])
+        )
+        l.write(tmp)
+    l.close()
 def gen2pow(n:int):
     rate=0
     while(power(2,rate)<n):
@@ -54,156 +113,57 @@ def retryPath(url:str, funcDir=None):
             url = join(funcDir, url)
     return url
 
-def isAsciiVelmod(url:str, cor=4,funcDir=None):
+
+def set_new_cfg(path2cfg, cfg):
     """
-    路径的有效性需要靠调用者保证
-    这里只考虑绝对路径与相对路径的情况
+    写新cfg 的时候，将已经存在的cfg备份为 文件名+时间+.bac的格式
+    """
+    if exists(path2cfg):
+        print(f"{path2cfg} exist, backup and write a new one")
+        copy(path2cfg,
+             f"{path2cfg}.{datetime.now().strftime('%Y.%m.%d')}.bac")
+    f = open(path2cfg, 'w')
+    f.write(cfg.__str__())
+    f.close()
 
-    如果mainfunc不给出，只检查绝对路径。
-    同时，速度模型只做数量上的检查，不做物理或数值上的检查。
-
-    PSDM有两种速度模型，一种是五列的，一种是四列的。
-    区别在于第五列，即层数列。
-    速度模型的形式如下：
-    # 层数
-    # vp      # vs     # 密度     # 层厚     # 深度  # 第几层
-    -----------------------------------------------------------
-        82
-    3.000     1.800     2.300     1.600       1.6       1
-    4.700     2.800     2.600     2.700       4.3       2
-
-    >>> path2PSDM = 'D:\project\chen_rfunc'
-    >>> isAsciiVelmod("cwbq",funcDir=join(path2PSDM, "m660q"))
-    True
+def runner_psdm_dict(path2PSDM, base_cfg, changes:dict):
+    """
+    规定需要 psdm 的路径情况，
+    基础的cfg， 对cfg 的某种改动
     """
 
-    url = retryPath(url, funcDir)
-
-    try:
-        l=open(url, "r")
-        lines = l.readlines()
-        nline = int(lines[0].strip())+1
-        # remove empty lines
-        while not lines[-1].strip():
-            lines.pop()
-        if len(lines) != nline:
-            raise IOError(f"file {url} is not a valid velocity model")
-
-        for _i in lines[1:]:
-            if len(_i.split()) < cor:
-                raise IOError(f"file {url} has no enough columns")
-
-        l.close()
-    except:
-        raise IOError(f"file {url} is not a valid velocity model")
-    return True
+    if not isinstance(base_cfg,(cfg_m660q,cfg_Pierce_new_n,cfg_binr_vary_scan_n,cfg_Pierce_new_n)):
+        raise TypeError("base_cfg should be at least one in cfgPSDM")
+    # set changes
+    for _i,_j in changes:
+        setattr(base_cfg, _i, _j)
+    runner_psdm(path2PSDM, base_cfg)
 
 
+def runner_psdm(path2PSDM, base_cfg):
+    # save changes and run
+    if isinstance(base_cfg,cfg_m660q):
+        path2cfg = join(path2PSDM,'bin',"m660q_model.in")
+        cmd = join(path2PSDM,'bin','M660q_model')
+    elif isinstance(base_cfg, cfg_Pierce_new_n):
+        path2cfg = join(path2PSDM,'bin','pierc_new_n.in')
+        cmd = join(path2PSDM,'bin','pierc_new_n')
+    elif isinstance(base_cfg, cfg_binr_vary_scan_n):
+        path2cfg = join(path2PSDM,'bin','binr_vary_scan_n.inp')
+        cmd = join(path2PSDM,'bin','binr_vary_scan_n')
+    elif isinstance(base_cfg, cfg_Hdpmig):
+        path2cfg = join(path2PSDM,'bin','hdpmig.in')
+        cmd = join(path2PSDM,'bin','hdpmig.x')
+    else:
+        raise ValueError("not a valid cfg class")
 
-def _str_m660q(cfg):
-    return \
-f"* velocity model file\n\
-{cfg.ref_model}\n\
-* ray file\n\
-{cfg.ray}\n\
-* output file\n\
-{cfg.m660q_out}\n\
-* iflat, itype (= 0: free-surface refl.; else: conversion (>0: Ps; <0: Sp))\n\
-{cfg.iflat:01d}     {cfg.itype:01d}\n\
-\n"
+    set_new_cfg(path2cfg, base_cfg)
 
-def _str_pierce_new_n(cfg):
-    return \
-f"* output file name: iaj\n\
-{cfg.pierc_out}\n\
-* the coordinate center of line: evla0,evlo0\n\
-{cfg.center_la:.1f}, {cfg.center_lo:.1f}\n\
- * output time point number: np0, irayp\n\
-{cfg.out_npts}      {cfg.sac_user_num_rayp}\n\
-* model file\n\
-{cfg.ref_model}\n\
-* * ivar (0: dist; 1: gcarc; 2: baz),varmin,varmax\n\
-{cfg.event_filt_flag}     {cfg.event_filt_min}     {cfg.event_filt_max}\n\
-* NW,(NWI(I),NWID(I),I=1,NW)\n\
-{cfg.nw}\n\
-* NDW(1:5): indexs in NWI for outputting piercing points at 5 depths\n\
-{cfg.ndw}\n\
-* directory containing RFs\n\
-{cfg.rfdata_path}\n\
-* number of subdirectories\n\
-{cfg.num_sub}\n\
-{cfg.name_sub}\n\
-{cfg.name_lst}\n\
-\n"
-
-def _str_binr_vary_scan_n(cfg):
-    return \
-f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,endla0,endlo0,dsp\n\
-{cfg.Descar_la_begin},{cfg.Descar_lo_begin},{cfg.Descar_la_end},{cfg.Descar_lo_end},{cfg.Descar_step}\n\
-* profile length and azimuth range and interval: xlenp,alphab,alphae,dalp\n\
-{cfg.Profile_len}, {cfg.az_min}, {cfg.az_maz}, {cfg.az_step}\n\
-* the spacing between bins, least number of traces, rnumtra, UTM_PROJECTION_ZONE(new)\n\
-{cfg.bins_step}     {cfg.trace_num_min}      {cfg.ratio_trace}      {cfg.UTM_zone}\n\
-* time file name: timefile\n\
-{cfg.timefile}\n\
-* output file name: outfile\n\
-{cfg.outpufile}\n\
-* ouput number of time samples in each trace: npt, dt\n\
-{cfg.out_trace_npts}     {cfg.out_trace_dt}\n\
-* the indexes of reference ray among 1 -- nw: ninw, (inw0(i),i=1,ninw)   \n\
-{cfg.nw_pair}\n\
-* minimum YBIN (km)\n\
-{cfg.minYbin}\n\
-* DYBIN (km)\n\
-{cfg.Dybin}\n\
-* maximum YBIN (km)\n\
-{cfg.maxYbin}\n\
-*temporary directory name to store the intermedial files (.img)\n\
-{cfg.tmpdir}\n\
-* moveout index: idist, gcarc1  (only useful for idist=1)\n\
-{cfg.moveout_flag}  {cfg.moveout_gcarc}\n\
-* inorm\n\
-{cfg.norm_flag} \n\
-* output number and depth indexes in ninw: noutd,(ioutd(i),i=1,noutd)\n\
-{cfg.ninw}\n\
-* output index for stacking: istack\n\
-{cfg.stack_flag} \n\
-* output index for gcarc, baz and p: ioutb\n\
-{cfg.ioutb}\n\
-* piercing point data file number: npief\n\
-{cfg.npief}\n\
-* input file name: infile\n\
-{cfg.binr_out_name}\n"
-
-def _str_hdpming(cfg):
-    return \
-f"* imethod (phshift=0; phscreen=1, hybscreen: else),irefvel,vscale \n\
-{cfg.imethod}      {cfg.irefvel}     {cfg.vscale}\n\
-* fmin, fmax (Minimum and maximum frequencies), ifreqindl, ifreqindr\n\
-{cfg.fmin}    {cfg.fmax}    {cfg.ifreqindl}    {cfg.ifreqindr}\n\
-* nxmod, nzmod, nx, nz\n\
-{cfg.nxmod}    {cfg.nzmod}   {cfg.nx}     {cfg.nz}\n\
-* dx, dz\n\
-{cfg.dx}   {cfg.dz}\n\
-* ntrace, nt, dt (in sec.), nt0, ntb\n\
-{cfg.ntrace}    {cfg.nt}    {cfg.dt}    {cfg.nt0}    {cfg.ntb}\n\
-* FD method (15, 45, 65)\n\
-{cfg.FD}\n\
-* nxleft, nxright\n\
-{cfg.nxleft}    {cfg.nxright}\n\
-* ifmat (=0: ascii vel. file; else: binary vel. file)\n\
-{cfg.ifmat}\n\
-* modvelocity\n\
-{cfg.velmod}\n\
-* tx_data (input seismic data)\n\
-{cfg.tx_data}\n\
-* migdata (output imaging data)\n\
-{cfg.migdata}\n\
-* intrace\n\
-{cfg.intrace}\n\
-* first trace index: itrfirst\n\
-{cfg.itrfirst}\n"
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
+    #proc0 = Popen(
+    #    cmd,
+    #    stdin=None,
+    #    stdout=PIPE,
+    #    stderr=PIPE,
+    #    shell=True)
+    #outinfo02, errinfo02 = proc0.communicate()
+    subprocess.call([cmd],cwd=join(path2PSDM,'bin'))

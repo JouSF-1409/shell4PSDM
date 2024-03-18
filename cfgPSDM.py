@@ -7,13 +7,11 @@ from dataclasses import dataclass
 setxxx函数本意通过解包来实现比较方便的格式化，未来可能放在类的__str__方法里面
 """
 
-from util import _str_m660q,_str_hdpming,_str_pierce_new_n,_str_binr_vary_scan_n
-
 
 @dataclass
 class cfg_m660q:
-    ref_model: str = "cwbq"
-    ray: str = "mray_cwbq.dat"  # 射线路径文件
+    ref_model: str = "../model/cwbq"
+    ray: str = "../model/mray_cwbq.dat"  # 射线路径文件
     m660q_out: str = "m660q_cwbq_Pcs1.out"  # 输出文件名
     iflat: int = 1  # 是否做展平变换，0表不做，1表做
     itype: int = 1  # 计算震相的类型 >0表示Ps，<0 表示Sp
@@ -35,7 +33,7 @@ class cfg_Pierce_new_n:
     center_lo: float = 117.0
     # 输出的 事件长度 in npts； 射线参数保存的位置, 0 for user0
     out_npts: int = 1251,
-    sac_user_num_rayp: int = 0
+    sac_user_num_rayp: int = 1
     # 速度模型的位置
     ref_model: str = "../model/cwbq"
     # 筛选事件， 0,1,2 分别表示 震中距(km), 震中距(degree)，反方位角
@@ -44,8 +42,8 @@ class cfg_Pierce_new_n:
     event_filt_min: int = 28
     event_filt_max: int = 95
     # 没搞懂的参数名称
-    _nw: str = "47,3 4,4 6,5 7,6 8,7 9,8 10,9 11,10 12,11 13,12 14,13 15,14 16,15 17,16 18,17 19,18 20,19 21,20 22,21 23,22 24,23 25,24 26,25 27,26 28,27 29,28 30,29 31,30 32,31 33,32 34,33 35,34 36,35 37,36 38,37 39,38 40,39 41,40 42,41 43,42 44,43 45,44 46,45 47,46 48,47 49,48 50,49 51",
-    _ndw: str = "2  6  12  23   38           32-, 100-, 207-, 407-, 666-km",
+    _nw: str = "47,3 4,4 6,5 7,6 8,7 9,8 10,9 11,10 12,11 13,12 14,13 15,14 16,15 17,16 18,17 19,18 20,19 21,20 22,21 23,22 24,23 25,24 26,25 27,26 28,27 29,28 30,29 31,30 32,31 33,32 34,33 35,34 36,35 37,36 38,37 39,38 40,39 41,40 42,41 43,42 44,43 45,44 46,45 47,46 48,47 49,48 50,49 51"
+    _ndw: str = "2  6  12  23   38           32-, 100-, 207-, 407-, 666-km"
     rfdata_path: str = "../data/"  # 项目文件夹路径
     # 简便起见，这里推荐一次只计算一个项目
     num_sub: int = 1  # 项目文件夹数量
@@ -61,7 +59,7 @@ class cfg_Pierce_new_n:
 
 @dataclass
 class cfg_binr_vary_scan_n:
-    # ccp叠加剖面的划分，这里的坐标均按之前计算得到的笛卡尔坐标表示，距离为km
+    # ccp叠加剖面的划分，这里的坐标均按之前计算得到的笛卡尔坐标表示，距离为km。这里 begin 和end 使用不同的值，以获得一系列平行的剖面。
     # 表示剖面组 的起止点位置，step表示每次起点移动的距离
     # 如果起点的begin和end相同，则有不同的起点
     Descar_la_begin: float = 205.
@@ -70,6 +68,7 @@ class cfg_binr_vary_scan_n:
     Descar_lo_end: float = -900.
     Descar_step: float = 100.
     # 每个剖面的设置，剖面长度，方位角范围，方位角step。同样可以获得不同的剖面
+    # min max 设置不同的值，以获取一个旋转的剖面
     Profile_len: float = 700.
     az_min: float = 90.
     az_max: float = 90.
@@ -98,7 +97,7 @@ class cfg_binr_vary_scan_n:
     tmpdir: str = "../temp"
     # flag = 0,1,<0; 0表用pierc_new_n的平均震中距为参考做动校正, <0为不做动校正，=1为按选择的震中距为参考做动校正
     # 由于张周提前做了动校正，这里他的内容将其关掉
-    moveout_flag: int = 0,
+    moveout_flag: int = -1
     moveout_gcarc: float = 180.
     # 是否对振幅做归一化处理，0表示不做，其他的表示对每个RF单独做一次
     norm_flag: int = 1
@@ -131,7 +130,7 @@ class cfg_Hdpmig:
     ifreqindr: float = 40
     # 道数， 深度， 剖面与深度方向上，大于道数和深度的最小2的整数倍点，
     nxmod: int = 351
-    nzmod: int = 1001
+    nzmod: int = 800
     nx: int = 1024
     nz: int = 800
     # 剖面上道的采样间隔， 垂直方向上的深度间隔
@@ -163,3 +162,110 @@ class cfg_Hdpmig:
     def __str__(self):
         return _str_hdpming(self)
 
+
+def _str_m660q(cfg):
+    return \
+f"* velocity model file\n\
+{cfg.ref_model}\n\
+* ray file\n\
+{cfg.ray}\n\
+* output file\n\
+{cfg.m660q_out}\n\
+* iflat, itype (= 0: free-surface refl.; else: conversion (>0: Ps; <0: Sp))\n\
+{cfg.iflat:01d}     {cfg.itype:01d}\n\
+\n"
+
+
+def _str_pierce_new_n(cfg):
+    return \
+f"* output file name: iaj\n\
+{cfg.pierc_out}\n\
+* the coordinate center of line: evla0,evlo0\n\
+{cfg.center_la:.1f}, {cfg.center_lo:.1f}\n\
+ * output time point number: np0, irayp\n\
+{cfg.out_npts}      {cfg.sac_user_num_rayp}\n\
+* model file\n\
+{cfg.ref_model}\n\
+* * ivar (0: dist; 1: gcarc; 2: baz),varmin,varmax\n\
+{cfg.event_filt_flag}     {cfg.event_filt_min}     {cfg.event_filt_max}\n\
+* NW,(NWI(I),NWID(I),I=1,NW)\n\
+{cfg._nw}\n\
+* NDW(1:5): indexs in NWI for outputting piercing points at 5 depths\n\
+{cfg._ndw}\n\
+* directory containing RFs\n\
+{cfg.rfdata_path}\n\
+* number of subdirectories\n\
+{cfg.num_sub}\n\
+{cfg.name_sub}\n\
+{cfg.name_lst}\n\
+\n"
+
+
+def _str_binr_vary_scan_n(cfg):
+    return \
+f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,endla0,endlo0,dsp\n\
+{cfg.Descar_la_begin},{cfg.Descar_lo_begin},{cfg.Descar_la_end},{cfg.Descar_lo_end},{cfg.Descar_step}\n\
+* profile length and azimuth range and interval: xlenp,alphab,alphae,dalp\n\
+{cfg.Profile_len}, {cfg.az_min}, {cfg.az_max}, {cfg.az_step}\n\
+* the spacing between bins, least number of traces, rnumtra, UTM_PROJECTION_ZONE(new)\n\
+{cfg.bins_step}     {cfg.trace_num_min}      {cfg.ratio_trace}      {cfg.UTM_zone}\n\
+* time file name: timefile\n\
+{cfg.timefile}\n\
+* output file name: outfile\n\
+{cfg.outpufile}\n\
+* ouput number of time samples in each trace: npt, dt\n\
+{cfg.out_trace_npts}     {cfg.out_trace_dt}\n\
+* the indexes of reference ray among 1 -- nw: ninw, (inw0(i),i=1,ninw)   \n\
+{cfg.nw_pair}\n\
+* minimum YBIN (km)\n\
+{cfg.minYbin}\n\
+* DYBIN (km)\n\
+{cfg.Dybin}\n\
+* maximum YBIN (km)\n\
+{cfg.maxYbin}\n\
+*temporary directory name to store the intermedial files (.img)\n\
+{cfg.tmpdir}\n\
+* moveout index: idist, gcarc1  (only useful for idist=1)\n\
+{cfg.moveout_flag}  {cfg.moveout_gcarc}\n\
+* inorm\n\
+{cfg.norm_flag} \n\
+* output number and depth indexes in ninw: noutd,(ioutd(i),i=1,noutd)\n\
+{cfg._ninw}\n\
+* output index for stacking: istack\n\
+{cfg.stack_flag} \n\
+* output index for gcarc, baz and p: ioutb\n\
+{cfg.ioutb}\n\
+* piercing point data file number: npief\n\
+{cfg.npief}\n\
+* input file name: infile\n\
+{cfg.binr_out_name}\n"
+
+
+def _str_hdpming(cfg):
+    return \
+f"* imethod (phshift=0; phscreen=1, hybscreen: else),irefvel,vscale \n\
+{cfg.imethod}      {cfg.irefvel}     {cfg.vscale}\n\
+* fmin, fmax (Minimum and maximum frequencies), ifreqindl, ifreqindr\n\
+{cfg.fmin}    {cfg.fmax}    {cfg.ifreqindl}    {cfg.ifreqindr}\n\
+* nxmod, nzmod, nx, nz\n\
+{cfg.nxmod}    {cfg.nzmod}   {cfg.nx}     {cfg.nz}\n\
+* dx, dz\n\
+{cfg.dx}   {cfg.dz}\n\
+* ntrace, nt, dt (in sec.), nt0, ntb\n\
+{cfg.ntrace}    {cfg.nt}    {cfg.dt}    {cfg.nt0}    {cfg.ntb}\n\
+* FD method (15, 45, 65)\n\
+{cfg._FD}\n\
+* nxleft, nxright\n\
+{cfg.nxleft}    {cfg.nxright}\n\
+* ifmat (=0: ascii vel. file; else: binary vel. file)\n\
+{cfg.ifmat}\n\
+* modvelocity\n\
+{cfg.velmod}\n\
+* tx_data (input seismic data)\n\
+{cfg.tx_data}\n\
+* migdata (output imaging data)\n\
+{cfg.migdata}\n\
+* intrace\n\
+{cfg.intrace}\n\
+* first trace index: itrfirst\n\
+{cfg.itrfirst}\n"
