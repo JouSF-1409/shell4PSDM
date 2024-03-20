@@ -15,23 +15,42 @@ from ccp import Profile
 from util import runner_psdm
 
 from cfgPSDM import cfg_binr_vary_scan_n,cfg_Hdpmig,cfg_m660q,cfg_Pierce_new_n
+npy_ccp=""
+preparelist={
+    # Concordant structural variations from the surface to the base of the upper mantle in
+    #   depth_dat  bin_rad domperiod  width  slide_val    lat1      lon1     lat2      lon2
+    'aa':(npy_ccp, '100',    '1',   '150',   '5',    '35.7',    '116.8',   '35.8',   '120.3'),
+    'bb':(npy_ccp, '100',    '1',   '150',   '5',    '38.4',    '117.5',   '43.9',   '119.5'),
+    'cc':(npy_ccp, '100',    '1',   '150',   '5',    '36.3',    '114.6',   '43.3',   '120.4'),
+    'dd':(npy_ccp, '100',    '1',   '150',   '5',    '42.2',    '114.0',   '38.4',   '121.3'),
+    'ee':(npy_ccp, '100',    '1',   '150',   '5',    '42.3',    '112.3',   '36.1',   '120.0'),
+    'ff':(npy_ccp, '100',    '1',   '150',   '5',    '40.4',    '108.2',   '40.4',   '120.8'),
+    'gg':(npy_ccp, '100',    '1',   '150',   '5',    '39.2',    '108.8',   '35.2',   '120.8'),
+    # Lithospheric structure beneath the central and western North China Craton and adjacent regions from S-receiver function imaging
+    'E1':(npy_ccp, '100',    '1',   '150',   '5',    '32.5',    '115.6',   '27.3',   '121.0'),
+    'E2':(npy_ccp, '100',    '1',   '150',   '5',    '34.9',    '116.3',   '34.9',   '119.0'),
+    'E3':(npy_ccp, '100',    '1',   '150',   '5',    '37.5',    '118.1',   '42.5',   '119.4'),
+    'E4':(npy_ccp, '100',    '1',   '150',   '5',    '35.0',    '114.2',   '42.5',   '120.6'),
+    'E5':(npy_ccp, '100',    '1',   '150',   '5',    '38.1',    '120.0',   '41.7',   '113.7'),
+    'E6':(npy_ccp, '100',    '1',   '150',   '5',    '40.0',    '111.7',   '35.0',   '118.8'),
+    'E7':(npy_ccp, '100',    '1',   '150',   '5',    '40.0',    '107.5',   '40.0',   '121.0'),
+    'E8':(npy_ccp, '100',    '1',   '150',   '5',    '34.4',    '118.8',   '38.8',   '107.5'),
+    'W1':(npy_ccp, '100',    '1',   '150',   '5',    '37.5',    '102.8',   '31.9',   '114.4'),
+    'W2':(npy_ccp, '100',    '1',   '150',   '5',    '33.8',    '105.0',   '30.0',   '111.9'),
+    'W3':(npy_ccp, '100',    '1',   '150',   '5',    '35.5',    '105.0',   '35.0',   '115.0'),
+    'W4':(npy_ccp, '100',    '1',   '150',   '5',    '31.3',    '110.0',   '38.8',   '109.4'),
+    'W5':(npy_ccp, '100',    '1',   '150',   '5',    '38.3',    '106.7',   '31.3',   '105.0'),
+    'W6':(npy_ccp, '100',    '1',   '150',   '5',    '41.3',    '111.3',   '29.4',   '111.3'),
+    'W7':(npy_ccp, '100',    '1',   '150',   '5',    '36.7',    '115.0',   '30.0',   '110.0'),
+    'W8':(npy_ccp, '100',    '1',   '150',   '5',    '33.8',    '116.3',   '35.8',   '107.5'),
+    # Intralithospheric mantle structures recorded continental subduction
+    'NC1':(npy_ccp, '100',    '1',   '150',   '5',    '36.0',    '119.5',   '36.5',   '116.5'),
+    'NC3':(npy_ccp, '100',    '1',   '150',   '5',    '40.0',    '118.2',   '44.0',   '118.0'),
+    'NC4':(npy_ccp, '100',    '1',   '150',   '5',    '40.0',    '112.5',   '39.5',   '107.0'),
+    'NC5':(npy_ccp, '100',    '1',   '150',   '5',    '36.0',    '114.0',   '36.0',   '108.5'),
+    'NC6':(npy_ccp, '100',    '1',   '150',   '5',    '40.0',    '124.0',   '45.0',   '116.0'),
+    'NC7':(npy_ccp, '100',    '1',   '150',   '5',    '32.0',    '108.0',   '42.0',   '112.0'),
 
-profiles = {
-    #       depth_dat     bin_rad domperiod  width  slide_val    lat1      lon1     lat2      lon2
-    'aa': ("./CA3_SRF.npy", '150', '3', '1000', '30', '40.3', '113', '40.3', '123'),
-    'bb': ("./CA3_SRF.npy", '150', '3', '1000', '30', '40', '118.3', '44.4', '118.3'),
-    'E6': ("./CA3_SRF.npy", '150', '3', '1000', '30', '41', '112', '36', '120'),
-    'E7': ("./CA3_SRF.npy", '200', '3', '1000', '30', '40', '107', '40', '121'),
-    'rem': ("./CA3_SRF.npy", '150', '3', '1000', '30', '36', '102', '36', '115'),
-    'sd': ("./CA3_SRF.npy", '150', '3', '1000', '30', '38', '102', '33', '114'),
-    'W1': ("./CA3_SRF.npy", '150', '3', '1000', '30', '36.3', '114.7', '35.8', '121.6'),
-    'W2': ("./CA3_SRF.npy", '150', '3', '1000', '30', '40', '107', '40', '121'),
-    'W6': ("./CA3_SRF.npy", '150', '3', '1000', '30', '31', '111', '42', '114'),
-    'AA': ("./CA3_SRF_300.npy", '150', '3', '1000', '30', '39', '108', '35', '11'),
-    # Chen 2009 Physics of the Earth and Planet...
-    'CHEN': ("./CA3_SRF_300.npy", '150', '3', '1000', '30', '40', '112', '36', '120'),
-    # W4
-    'W5': ("./CA3_SRF.npy", '150', '3', '1000', '30', '32', '107', '40', '108'),
 }
 
 ### 全局变量区
@@ -100,10 +119,10 @@ def runner_ccp_stack(prof:Profile,
     binr.Descar_lo_begin = prof.plon1
     binr.Descar_lo_end = prof.plon1
     dist = distaz(prof.plat1, prof.plon1,
-                              prof.plat2, prof.plon2)
+                        prof.plat2, prof.plon2)
     binr.Profile_len = dist.degreesToKilometers()
-    binr.az_min = dist.baz
-    binr.az_max = dist.baz
+    binr.az_min = dist.az
+    binr.az_max = dist.az
 
     # 数据类型设置
     binr.out_trace_npts = 900
@@ -112,7 +131,7 @@ def runner_ccp_stack(prof:Profile,
     binr.bins_step = prof.step
 
     # 叠加设置,归一化和动校正在这里标注
-    binr.moveout_flag = 0
+    #binr.moveout_flag = 0
     ## 输入输出文件
     # m660q的输出文件
     binr.timefile = m660q.m660q_out
@@ -148,17 +167,20 @@ if __name__ == "__main__":
     #m660q 只跑一遍
     m660q=runner_m660q()
     from plot_like_zhang import plot3_comp
-    for name, info in profiles.items():
+    for name, info in preparelist.items():
         # 记录每个剖面的名称，程序运行的时间
-        timestap = f"{name}_{time.now().strftime('%Y.%m.%d.%H.%M.%S')}"
-        # 设置剖面特征，Ybin有点复杂，这里不处理。
-        # 如果想要修改，使用全局变量进行介入
-        prof = Profile(name,
-                       # lat1， lon1， lat2，  lon2， slide_val
-                       float(info[5]),float(info[6]),float(info[7]),float(info[8]),float(info[4]))
-        #print(prof)
-        pierc=runner_pierce(prof)
-        stack=runner_ccp_stack(prof,m660q,pierc)
-        hdp=runner_hdp(prof,stack)
-        # 进行绘图
-        plot3_comp(path2PSDM, prof,m660q,pierc,stack,hdp)
+        try:
+            timestap = f"{name}_{time.now().strftime('%Y.%m.%d.%H.%M.%S')}"
+            # 设置剖面特征，Ybin有点复杂，这里不处理。
+            # 如果想要修改，使用全局变量进行介入
+            prof = Profile(name,
+                           # lat1， lon1， lat2，  lon2， slide_val
+                           float(info[5]),float(info[6]),float(info[7]),float(info[8]),float(info[4]))
+            #print(prof)
+            pierc=runner_pierce(prof)
+            stack=runner_ccp_stack(prof,m660q,pierc)
+            hdp=runner_hdp(prof,stack)
+            # 进行绘图
+            plot3_comp(path2PSDM, prof,m660q,pierc,stack,hdp)
+        except:
+            continue

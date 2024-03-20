@@ -23,6 +23,7 @@ def min_sta2prof(stla, stlo, pro:Profile):
     :param pro: 测线位置
     :return: 最小距离
     """
+    #print(f"stla:{stla}, stlo:{stlo}, pro:{pro}")
     space = distaz(
         pro.plat1, pro.plon1,
         pro.plat2, pro.plon2
@@ -33,12 +34,8 @@ def min_sta2prof(stla, stlo, pro:Profile):
     lons = np.linspace(
         pro.plon1, pro.plon2, int(space)
     )
-    last = 6370
-    for _i in range(lons.shape[0]):
-        dist = distaz(stla, stlo, lats[_i], lons[_i]).degreesToKilometers()
-        if dist > last:
-            return dist
-    return dist
+    dist = [distaz(stla,stlo,lats[_i],lons[_i]).degreesToKilometers() for _i in range(len(lats))]
+    return min(dist)
 
 def gen_psdm_list(sta_list:str,
                   data_path:str,

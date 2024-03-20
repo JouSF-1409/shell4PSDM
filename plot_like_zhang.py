@@ -82,35 +82,35 @@ def plot3_comp(path2PSDM:str,
     #Xrange = np.linspace(0, binr.Profile_len, hdp.nxmod)
     #timelen = (binr.out_trace_npts - 1) * binr.out_trace_dt
     # 选择最长的一边作为横轴
-    LatRange = np.linspace(prof.plat1, prof.plat2, hdp.nxmod)
+    LonRange = np.linspace(prof.plon1, prof.plon2, hdp.nxmod)
 
     fig, ax = plt.subplots(3, 1, figsize=(16, 14), sharex=True,
                     gridspec_kw={'height_ratios': [2, 3, 3]})
-    im00 = ax[0].plot(LatRange, yb_data[1], 'k', lw=4, label="Half Bin Width(km)")
+    im00 = ax[0].plot(LonRange, yb_data[1], 'k', lw=4, label="Half Bin Width(km)")
     ax[0].set_ylabel("Half Bin Width(km)")
     ax_00 = ax[0].twinx()
-    ax_00.plot(LatRange, num_data[1, :], 'r', label="RF num")
+    ax_00.plot(LonRange, num_data[1, :], 'r', label="RF num")
     ax_00.set_ylabel("RF number")
     ax_00.set_title("Parameters at 100km")
     ax[0].legend(loc=2)
     ax_00.legend(loc=1)
 
-    im1 = ax[1].pcolor(LatRange, Trange, profile.T,
-                        cmap="coolwarm", vmin=-0.6, vmax=0.6)
+    im1 = ax[1].pcolor(LonRange, Trange, profile.T,
+                        cmap="coolwarm", vmin=-0.1, vmax=0.1)
     # im1=ax[1].contourf(Xrange,Trange,profile.T)
     cax = add_right_cax(ax[1], pad=0.02, width=0.02)
     cbar = fig.colorbar(im1, cax=cax)
-    im1.set_clim(-0.5, 0.5)
-    ax[1].set_ylim([0, 30])
+    im1.set_clim(-0.1, 0.15)
+    ax[1].set_ylim([0, 20])
     ax[1].set_ylabel("T(s)")
     ax[1].invert_yaxis()
     ax[1].set_title("CCP stack section")
-    im1 = ax[2].pcolormesh(LatRange, Zrange, profile_mig.T,
-                    cmap="jet", vmin=-0.6, vmax=0.6)
+    im1 = ax[2].pcolormesh(LonRange, Zrange, profile_mig.T,
+                    cmap="jet", vmin=-0.1, vmax=0.1)
     cax = add_right_cax(ax[2], pad=0.02, width=0.02)
     cbar = fig.colorbar(im1, cax=cax)
-    im1.set_clim(-0.45, 0.55)
-    ax[2].set_ylim([0, 250])
+    im1.set_clim(-0.1, 0.15)
+    ax[2].set_ylim([0, 200])
     ax[2].set_xlabel("Latitute ($\degree$)")
     ax[2].set_ylabel("Depth(km)")
     ax[2].grid()
