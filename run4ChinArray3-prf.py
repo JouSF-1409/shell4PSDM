@@ -5,7 +5,7 @@
 
 需要自主添加nmo.dat
 
-所有的结果都是在bin 里拉屎，区别是不用在屎里找东西。
+所有的结果都堆在bin 里，使用make clean 进行清理
 """
 from os.path import join
 from math import floor
