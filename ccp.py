@@ -11,12 +11,10 @@ from os import chdir
 from collections import namedtuple
 # 测线形状的类
 Profile = namedtuple("Profile",
-                     "plat1 plon1 plat2 plon2 step")
+                     "pname plat1 plon1 plat2 plon2 step")
 
 import numpy as np
-from seispy.geo import distaz
-from seispy.rf2depth_makedata import _load_mod
-
+from distaz import distaz
 
 def min_sta2prof(stla, stlo, pro:Profile):
     """
@@ -25,7 +23,6 @@ def min_sta2prof(stla, stlo, pro:Profile):
     :param pro: 测线位置
     :return: 最小距离
     """
-
     space = distaz(
         pro.plat1, pro.plon1,
         pro.plat2, pro.plon2
@@ -57,10 +54,10 @@ def gen_psdm_list(sta_list:str,
     :return: 在目录下面，生成一个名为sta.lst 的文件，按照psdm 的目标格式进行计算
     """
     try:
-        dtype = {'names': ('station', 'stla', 'stlo'), 'formats': ('U20', 'f4', 'f4')}
+        dtype = {'names': ('station', 'stlo', 'stla'), 'formats': ('U20', 'f4', 'f4')}
         stas, stlos, stlas  = np.loadtxt(sta_list, dtype=dtype, unpack=True, ndmin=1)
     except:
-        raise IOError("需要一个 台站目录\n 格式为\n台站名   stla    stlo")
+        raise IOError("需要一个 台站目录\n 格式为\n台站名   stlo    stla")
 
     try:
         chdir(data_path)

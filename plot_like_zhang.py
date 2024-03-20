@@ -1,0 +1,125 @@
+"""
+ccp 叠加结果和psdm成像结果还是不要分开先吧。
+可能都有用到。
+
+目前的需要是，从三个数据结构中提取有效信息，
+进行绘图
+"""
+from glob import glob
+from os.path import join
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+import numpy as np
+from ccp import Profile
+from cfgPSDM import cfg_Hdpmig, cfg_m660q, cfg_Pierce_new_n,cfg_binr_vary_scan_n
+
+
+def add_right_cax(ax, pad, width):
+    '''
+    在一个ax右边追加与之等高的cax.
+    pad是cax与ax的间距.
+    width是cax的宽度.
+    '''
+    axpos = ax.get_position()
+    caxpos = mpl.transforms.Bbox.from_extents(
+        axpos.x1 + pad,
+        axpos.y0,
+        axpos.x1 + pad + width,
+        axpos.y1
+    )
+    cax = ax.figure.add_axes(caxpos)
+    return cax
+def plot3_comp(path2PSDM:str,
+               prof:Profile,
+               m660q:cfg_m660q,
+               pierc:cfg_Pierce_new_n,
+               binr:cfg_binr_vary_scan_n,
+               hdp:cfg_Hdpmig):
+    # CCP PLOT PART
+    ##################################################################################################
+    # Plot CCP stacking section with bin size and RF numbers at chosen depth
+    # Inputs (parameters set in binr_vary_scan_n.inp):
+    # 1. outfile    -   output file name, no prefix and postfix
+    #                   e.g. stack_*.dat, *_yb.dat, *_num.dat
+    # 2. xlenp      -   profile length (km)
+    # 3. npt        -   output number of time samples in each trace
+    # 4. dx         -   the spacing between bins along the profile (km)
+    # 5. dt         -   time interval (s)
+    # 6. noutd      -   output number in ninw
+    # 设置字体参数
+    config = {"font.family": 'sans-serif',
+              "font.size": 22, "mathtext.fontset": 'stix'}
+    rcParams.update(config)
+    noutd = 5 # 这个好像是输出转换点的深度，顶格五个，定死就行。
+    ## 打开 ccp的三个文件与偏移成像的结果
+    # ccp三个文件需要一定的形式推导，所以不是绝对路径
+    with open(
+        join(path2PSDM,"bin",f"stack_{binr.outpufile}.dat"), 'rb'
+    )as _f:
+        data = np.fromfile(_f, dtype=np.float32)
+        profile = (np.reshape(data, (hdp.nxmod, binr.out_trace_npts)))
+    with open(
+        join(path2PSDM, "bin", f"{binr.outpufile}_yb.dat"), 'rb'
+    ) as _f:
+        data_yb = np.fromfile(_f, dtype=np.float32)
+        yb_data = (np.reshape(data_yb, (noutd, hdp.nxmod)))
+    with open(
+        join(path2PSDM, "bin", f"{binr.outpufile}_num.dat"), 'rb'
+    ) as _f:
+        data_num = np.fromfile(_f, dtype=np.float32)
+        num_data = (np.reshape(data_num, (noutd, hdp.nxmod)))
+    with open(
+        join(path2PSDM, "bin", f"{hdp.migdata}"), 'rb'
+    ) as _f:
+        data_mig = np.fromfile(_f, dtype=np.float32)
+        profile_mig = (np.reshape(data_mig, (hdp.nxmod, hdp.nzmod)))
+
+
+    Zrange = np.linspace(0, hdp.nzmod * hdp.dz, hdp.nzmod)
+    Trange = np.linspace(0, binr.out_trace_npts * binr.out_trace_dt, binr.out_trace_npts)
+    # 水平的坐标轴，新的研究中使用了lat 取代了prof length
+    #Xrange = np.linspace(0, binr.Profile_len, hdp.nxmod)
+    #timelen = (binr.out_trace_npts - 1) * binr.out_trace_dt
+    # 选择最长的一边作为横轴
+    LatRange = np.linspace(prof.plat1, prof.plat2, hdp.nxmod)
+
+    fig, ax = plt.subplots(3, 1, figsize=(16, 14), sharex=True,
+                    gridspec_kw={'height_ratios': [2, 3, 3]})
+    im00 = ax[0].plot(LatRange, yb_data[1], 'k', lw=4, label="Half Bin Width(km)")
+    ax[0].set_ylabel("Half Bin Width(km)")
+    ax_00 = ax[0].twinx()
+    ax_00.plot(LatRange, num_data[1, :], 'r', label="RF num")
+    ax_00.set_ylabel("RF number")
+    ax_00.set_title("Parameters at 100km")
+    ax[0].legend(loc=2)
+    ax_00.legend(loc=1)
+
+    im1 = ax[1].pcolor(LatRange, Trange, profile.T,
+                        cmap="coolwarm", vmin=-0.6, vmax=0.6)
+    # im1=ax[1].contourf(Xrange,Trange,profile.T)
+    cax = add_right_cax(ax[1], pad=0.02, width=0.02)
+    cbar = fig.colorbar(im1, cax=cax)
+    im1.set_clim(-0.5, 0.5)
+    ax[1].set_ylim([0, 30])
+    ax[1].set_ylabel("T(s)")
+    ax[1].invert_yaxis()
+    ax[1].set_title("CCP stack section")
+    im1 = ax[2].pcolormesh(LatRange, Zrange, profile_mig.T,
+                    cmap="jet", vmin=-0.6, vmax=0.6)
+    cax = add_right_cax(ax[2], pad=0.02, width=0.02)
+    cbar = fig.colorbar(im1, cax=cax)
+    im1.set_clim(-0.45, 0.55)
+    ax[2].set_ylim([0, 250])
+    ax[2].set_xlabel("Latitute ($\degree$)")
+    ax[2].set_ylabel("Depth(km)")
+    ax[2].grid()
+    #ax[2].plot(stalstdata.stla, stalstdata.moho,color='white', marker='o', linestyle='', ms=5)
+    #ax[2].plot(stalstdata.stla, stalstdata.lab, color='white', marker='o', linestyle='', ms=5)
+    #ax[2].plot(stalstdata.stla, 5 + np.zeros(len(stalstdata.stla)), color='r', linestyle='', marker='v', ms=10)
+    ax[2].invert_yaxis()
+    ax[2].set_title(f"Migration Result")
+    ax[2].text(0.65, 0.1, f"Mig Freq{hdp.fmin}-{hdp.fmax}Hz",
+                fontdict={'size': '24', 'color': 'k'}, transform=ax[2].transAxes)
+    plt.savefig(join(path2PSDM,"trans",hdp.migdata+".png"),
+                    dpi=300, bbox_inches='tight')

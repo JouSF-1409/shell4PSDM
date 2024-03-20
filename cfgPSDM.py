@@ -110,7 +110,7 @@ class cfg_binr_vary_scan_n:
     # piercing point data file number
     npief: int = 1
     # 转换点数据信息的文件名，从pierce_new_n 这一步获得。
-    binr_out_name: str = "pierc_cwbq_nf2p5_wncc-s1_Pcs.dat"
+    pierc_out: str = "pierc_cwbq_nf2p5_wncc-s1_Pcs.dat"
 
     def __str__(self):
         return _str_binr_vary_scan_n(self)
@@ -238,7 +238,7 @@ f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,e
 * piercing point data file number: npief\n\
 {cfg.npief}\n\
 * input file name: infile\n\
-{cfg.binr_out_name}\n"
+{cfg.pierc_out}\n"
 
 
 def _str_hdpming(cfg):
