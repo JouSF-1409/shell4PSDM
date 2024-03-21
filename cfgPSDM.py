@@ -205,7 +205,7 @@ f"* output file name: iaj\n\
 def _str_binr_vary_scan_n(cfg):
     return \
 f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,endla0,endlo0,dsp\n\
-{cfg.Descar_la_begin},{cfg.Descar_lo_begin},{cfg.Descar_la_end},{cfg.Descar_lo_end},{cfg.Descar_step}\n\
+{cfg.Descar_la_begin:.3f},{cfg.Descar_lo_begin:.3f},{cfg.Descar_la_end:.3f},{cfg.Descar_lo_end:.3f},{cfg.Descar_step}\n\
 * profile length and azimuth range and interval: xlenp,alphab,alphae,dalp\n\
 {cfg.Profile_len}, {cfg.az_min}, {cfg.az_max}, {cfg.az_step}\n\
 * the spacing between bins, least number of traces, rnumtra, UTM_PROJECTION_ZONE(new)\n\

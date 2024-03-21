@@ -86,7 +86,7 @@ def runner_pierce(prof:Profile):
 	# 筛选距离台站300km 范围内的数据进行ccp叠加
 	# 生成rfs.lst 文件，用于 psdm 的ccp叠加， 所有的单位都是km, s/km
 	# 需要一个sta.lst，格式为 台站名\tstla\tstlo
-	#gen_psdm_list(join(prj_dir,data_dir,"sta.lst"),join(prj_dir, data_dir),300,prof)
+	gen_psdm_list(join(prj_dir,data_dir,"sta.lst"),join(prj_dir, data_dir),300,prof)
 	pierce.out_npts = 800
 	pierce.rfdata_path = prj_dir
 	pierce.name_sub = data_dir
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 	from plot_like_zhang import plot3_comp
 	for name, info in preparelist.items():
 	# 记录每个剖面的名称，程序运行的时间
-
+		try:
 			timestap = f"{name}_{time.now().strftime('%Y.%m.%d.%H.%M.%S')}"
 			# 设置剖面特征，Ybin有点复杂，这里不处理。
 			# 如果想要修改，使用全局变量进行介入
@@ -163,10 +163,10 @@ if __name__ == "__main__":
 				    float(info[5]), float(info[6]),
 				    float(info[7]),float(info[8]),
 				    float(info[4]))
-			#print(prof)
 			pierc=runner_pierce(prof)
 			stack=runner_ccp_stack(prof,m660q,pierc)
 			hdp=runner_hdp(prof,stack)
 			# 进行绘图
 			plot3_comp(path2PSDM, prof,m660q,pierc,stack,hdp)
-
+		except:
+			continue

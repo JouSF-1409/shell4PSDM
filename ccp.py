@@ -15,8 +15,11 @@ Profile = namedtuple("Profile",
                      "pname plat1 plon1 plat2 plon2 step")
 
 import numpy as np
-from distaz import distaz
+from geographiclib.geodesic import Geodesic
+distaz = Geodesic.WGS84
 from cfgPSDM import cfg_binr_vary_scan_n
+
+
 def get_UTM(Prof:Profile):
     """
     >>> get_UTM(Profile("a", 32.5, 115.6,32.5,115.6,2))
@@ -27,20 +30,23 @@ def get_UTM(Prof:Profile):
     )
 
 def set_prof(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
-    cfg_binr.Descar_la_begin = distaz(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2).degreesToKilometers() / 2
-    cfg_binr.Descar_lo_begin = distaz(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2).degreesToKilometers() / 2
 
-    dist = distaz(Prof.plat1, Prof.plon1,
+
+
+    cfg_binr.Descar_la_begin = distaz.Inverse(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2)['s12']/2000
+    cfg_binr.Descar_lo_begin = distaz.Inverse(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2)['s12']/2000
+
+    dist = distaz.Inverse(Prof.plat1, Prof.plon1,
                   Prof.plat2, Prof.plon2)
-    if dist.baz < 180:
+    if dist['azi1'] < 180:
         cfg_binr.Descar_lo_begin *= -1
-    if dist.baz < 90 or dist.baz > 270:
+    if dist['azi1'] < 90 or dist['azi1'] > 270:
         cfg_binr.Descar_la_begin *= -1
         cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
     cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
-    cfg_binr.Profile_len = dist.degreesToKilometers()
-    cfg_binr.az_min = dist.baz
-    cfg_binr.az_max = dist.baz
+    cfg_binr.Profile_len = dist['s12']/1000
+    cfg_binr.az_min = dist['azi1']
+    cfg_binr.az_max = dist['azi1']
     return cfg_binr
 
 def min_sta2prof(stla, stlo, pro:Profile):
@@ -51,17 +57,17 @@ def min_sta2prof(stla, stlo, pro:Profile):
     :return: 最小距离
     """
     #print(f"stla:{stla}, stlo:{stlo}, pro:{pro}")
-    space = distaz(
+    space = distaz.Inverse(
         pro.plat1, pro.plon1,
         pro.plat2, pro.plon2
-    ).degreesToKilometers()/pro.step
+    )['s12']/1000/pro.step
     lats = np.linspace(
         pro.plat1, pro.plat2, int(space)
     )
     lons = np.linspace(
         pro.plon1, pro.plon2, int(space)
     )
-    dist = [distaz(stla,stlo,lats[_i],lons[_i]).degreesToKilometers() for _i in range(len(lats))]
+    dist = [distaz.Inverse(stla,stlo,lats[_i],lons[_i])['s12']/1000 for _i in range(len(lats))]
     return min(dist)
 
 def gen_psdm_list(sta_list:str,
@@ -115,7 +121,7 @@ def trans_ccp_profile(pro:Profile):
     :param pro:
     :return:
     """
-    dist = distaz(pro.plat1, pro.plon1, pro.plat2, pro.plat2).degreesToKilometers()/2
+    dist = distaz.Inverse(pro.plat1, pro.plon1, pro.plat2, pro.plat2)['s12']/1000/2
     return (pro.plat1+pro.plat2)/2, (pro.plon1+pro.plon2)/2, dist
 
 if __name__ == "__main__":
