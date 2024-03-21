@@ -32,7 +32,7 @@ class cfg_Pierce_new_n:
     center_la: float = 38.0
     center_lo: float = 117.0
     # 输出的 事件长度 in npts； 射线参数保存的位置, 0 for user0
-    out_npts: int = 1251,
+    out_npts: int = 1251
     sac_user_num_rayp: int = 1
     # 速度模型的位置
     ref_model: str = "../model/cwbq"
@@ -79,6 +79,7 @@ class cfg_binr_vary_scan_n:
     bins_step: float = 2
     trace_num_min: int = 2
     ratio_trace: float = 1
+    # 墨卡托投影带编号
     UTM_zone: float = 50
     # m660q 中计算的输出表，不同深度转换波的理论到时
     timefile: str = "m660q_cwbq_Pcs1.out"
@@ -154,7 +155,7 @@ class cfg_Hdpmig:
     # 输入的叠加波场，即之前ccp叠加得到的结果
     tx_data: str = "../stack/stack_inw20cw_ispwnccaz90_yb15-100vnt2_xb200_dx2_norm0_nf2p5-s1_Pcs.dat"
     # 最终结果的文件名
-    migdata: str = "image_dx2dz05_inw20cw_ispwnccaz90_yb15-100vnt2_xb200_norm0_nf2p5-s1_Pcs_f0.01-1.20tl0r40_cwbq_nx351nz800.dat",
+    migdata: str = "image_dx2dz05_inw20cw_ispwnccaz90_yb15-100vnt2_xb200_norm0_nf2p5-s1_Pcs_f0.01-1.20tl0r40_cwbq_nx351nz800.dat"
     # ntrace是选择的输入道数间隔，如果intrace为正，则从tx_data文件中读取的输入波场是按正常顺序由第十三行参数itrfirst定义的第一道位置开始、每间隔intrace道的波场；如果intrace为负，则第十三行参数为输入波场的各道位置文件名，从tx_data中读取的是对应于该文件中给出的各道波场。这两个参数一般用不上，主要在测试中使用。
     intrace: int = 1
     itrfirst: int = 1

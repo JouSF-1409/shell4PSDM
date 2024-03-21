@@ -8,6 +8,7 @@ gen_psdm_list(): 生成一个用于psdm 的
 """
 from glob import glob
 from os import chdir
+from math import floor
 from collections import namedtuple
 # 测线形状的类
 Profile = namedtuple("Profile",
@@ -15,6 +16,32 @@ Profile = namedtuple("Profile",
 
 import numpy as np
 from distaz import distaz
+from cfgPSDM import cfg_binr_vary_scan_n
+def get_UTM(Prof:Profile):
+    """
+    >>> get_UTM(Profile("a", 32.5, 115.6,32.5,115.6,2))
+    >>> 49
+    """
+    return floor(
+        (360. + Prof.plon1 + Prof.plon2)/12
+    )
+
+def set_prof(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
+    cfg_binr.Descar_la_begin = distaz(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2).degreesToKilometers() / 2
+    cfg_binr.Descar_lo_begin = distaz(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2).degreesToKilometers() / 2
+
+    dist = distaz(Prof.plat1, Prof.plon1,
+                  Prof.plat2, Prof.plon2)
+    if dist.baz < 180:
+        cfg_binr.Descar_lo_begin *= -1
+    if dist.baz < 90 or dist.baz > 270:
+        cfg_binr.Descar_la_begin *= -1
+        cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
+    cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
+    cfg_binr.Profile_len = dist.degreesToKilometers()
+    cfg_binr.az_min = dist.baz
+    cfg_binr.az_max = dist.baz
+    return cfg_binr
 
 def min_sta2prof(stla, stlo, pro:Profile):
     """
@@ -90,3 +117,7 @@ def trans_ccp_profile(pro:Profile):
     """
     dist = distaz(pro.plat1, pro.plon1, pro.plat2, pro.plat2).degreesToKilometers()/2
     return (pro.plat1+pro.plat2)/2, (pro.plon1+pro.plon2)/2, dist
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
