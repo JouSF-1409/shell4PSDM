@@ -11,7 +11,6 @@ from os.path import join, isfile, isdir, exists
 from glob import glob
 from pathlib import Path
 from shutil import copy
-from subprocess import Popen, PIPE
 import subprocess
 
 from numpy import power
@@ -140,7 +139,11 @@ def runner_psdm_dict(path2PSDM, base_cfg, changes:dict):
     runner_psdm(path2PSDM, base_cfg)
 
 
-def runner_psdm(path2PSDM, base_cfg):
+def runner_psdm(path2PSDM, base_cfg,stamp="junk"):
+    """
+    保存配置文件，运行，并备份配置文件
+    stamp 一般为 剖面名+程序运行的时间。但这里开放自定义
+    """
     # save changes and run
     if isinstance(base_cfg,cfg_m660q):
         path2cfg = join(path2PSDM,'bin',"m660q_model.in")
@@ -158,12 +161,9 @@ def runner_psdm(path2PSDM, base_cfg):
         raise ValueError("not a valid cfg class")
 
     set_new_cfg(path2cfg, base_cfg)
-
-    #proc0 = Popen(
-    #    cmd,
-    #    stdin=None,
-    #    stdout=PIPE,
-    #    stderr=PIPE,
-    #    shell=True)
-    #outinfo02, errinfo02 = proc0.communicate()
     subprocess.call([cmd],cwd=join(path2PSDM,'bin'))
+
+    copy(
+        path2cfg,
+        f"{path2cfg}_{stamp}"
+    )

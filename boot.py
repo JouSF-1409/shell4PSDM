@@ -4,6 +4,7 @@
 单位为km， s/km
 
 需要自主添加nmo.dat
+
 """
 from os.path import join
 from math import floor
@@ -28,7 +29,7 @@ velmod_path=join(path2PSDM,"model","cwbq")
 # 数据位置
 prj_dir = "/home/jous/Desktop/F/project/ChinArray3-PRF/"
 data_dir = join(prj_dir,"4_decon_clean")
-
+timestap = time.now().strftime("%Y.%m.%d.%H.%M.%S")
 
 ## 第一步，生成射线参数文件
 ## 需要文件：
@@ -42,7 +43,7 @@ data_dir = join(prj_dir,"4_decon_clean")
 
 from cfgPSDM import cfg_m660q
 m660q = cfg_m660q()
-m660q.m660q_out = join(psdm_trans, f"m660.Pcs.{time.now().strftime('%Y.%m.%d')}.out")
+m660q.m660q_out = join(psdm_trans, f"m660.Pcs.out") # m660q的结果能反复使用因此不加时间标签
 runner_psdm(path2PSDM,m660q)
 
 ## 第二步， 射线路径计算
@@ -52,6 +53,7 @@ from ccp import gen_psdm_list
 pierce = cfg_Pierce_new_n()
 # 剖面的经纬度，步长
 prof = Profile(
+    "test",
     40.4, 108.2,
     40.4, 120.8, 1
 )
@@ -64,7 +66,7 @@ pierce.name_lst = "rfs.lst"
 pierce.center_la = (prof.plat1+prof.plat2)/2
 pierce.center_lo = (prof.plon1+prof.plon2)/2
 pierce.pierc_out = join(psdm_trans,
-                        f"pierce_{time.now().strftime('%Y.%m.%d')}.out")
+                        f"pierce_{timestap}.out")
 runner_psdm(path2PSDM,pierce)
 
 ## 第三步 ccp叠加
@@ -94,9 +96,10 @@ binr.moveout_flag = 0
 # m660q的输出文件
 binr.timefile = m660q.m660q_out
 # pierc 的输出文件
-binr.binr_out_name = pierce.pierc_out
+binr.pierc_out = pierce.pierc_out
 # ccp的输出文件
 # 这里不能使用相对路径或者绝对路径，因为结果 会在bin 文件夹下面以stack_{outputfile}.dat 为名称
+# 因为会有同时会有两个文件输出
 binr.outpufile = f"ccp_stack_{time.now().strftime('%Y.%m.%d')}"
 
 runner_psdm(path2PSDM,binr)
@@ -110,7 +113,7 @@ hdp = cfg_Hdpmig()
 # ccp叠加的输出结果
 hdp.tx_data = f"stack_{binr.outpufile}.dat"
 # 偏移叠加结果
-hdp.migdata = f"../trans/mig_{time.now().strftime('%Y.%m.%d')}.dat"
+hdp.migdata = f"../trans/mig_{timestap}.dat"
 ## 剖面
 hdp.nxmod = int(binr.Profile_len/binr.bins_step)+1
 hdp.ntrace = hdp.nxmod

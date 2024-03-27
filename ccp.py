@@ -8,15 +8,66 @@ gen_psdm_list(): 生成一个用于psdm 的
 """
 from glob import glob
 from os import chdir
+from math import floor
 from collections import namedtuple
 # 测线形状的类
 Profile = namedtuple("Profile",
-                     "plat1 plon1 plat2 plon2 step")
+                     "pname plat1 plon1 plat2 plon2 step")
 
 import numpy as np
-from seispy.geo import distaz
-from seispy.rf2depth_makedata import _load_mod
 
+from cfgPSDM import cfg_binr_vary_scan_n
+
+
+def get_UTM(Prof:Profile):
+    """
+    >>> get_UTM(Profile("a", 32.5, 115.6,32.5,115.6,2))
+    >>> 49
+    """
+    return floor(
+        (360. + Prof.plon1 + Prof.plon2)/12
+    )
+
+def set_prof(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
+    from geographiclib.geodesic import Geodesic
+    distaz = Geodesic.WGS84
+
+    cfg_binr.Descar_la_begin = distaz.Inverse(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2)['s12']/2000
+    cfg_binr.Descar_lo_begin = distaz.Inverse(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2)['s12']/2000
+
+    dist = distaz.Inverse(Prof.plat1, Prof.plon1,
+                  Prof.plat2, Prof.plon2)
+    az = dist['azi1']
+    if az < 0:
+        az += 360
+    if az < 180:
+        cfg_binr.Descar_lo_begin *= -1
+    if az < 90 or az > 270:
+        cfg_binr.Descar_la_begin *= -1
+        cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
+    cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
+    cfg_binr.Profile_len = dist['s12']/1000
+    cfg_binr.az_min = az
+    cfg_binr.az_max = az
+    return cfg_binr
+
+def set_prof_ori(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
+    from distaz import distaz
+    cfg_binr.Descar_la_begin = distaz(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2).degreesToKilometers()/2
+    cfg_binr.Descar_lo_begin = distaz(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2).degreesToKilometers()/2
+
+    dist = distaz(Prof.plat1, Prof.plon1,
+                  Prof.plat2, Prof.plon2)
+    if dist.baz < 180:
+        cfg_binr.Descar_lo_begin *= -1
+    if dist.baz < 90 or dist.baz > 270:
+        cfg_binr.Descar_la_begin *= -1
+        cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
+    cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
+    cfg_binr.Profile_len = dist.degreesToKilometers()
+    cfg_binr.az_min = dist.baz
+    cfg_binr.az_max = dist.baz
+    return cfg_binr
 
 def min_sta2prof(stla, stlo, pro:Profile):
     """
@@ -25,7 +76,24 @@ def min_sta2prof(stla, stlo, pro:Profile):
     :param pro: 测线位置
     :return: 最小距离
     """
+    #print(f"stla:{stla}, stlo:{stlo}, pro:{pro}")
+    from geographiclib.geodesic import Geodesic
+    distaz = Geodesic.WGS84
+    space = distaz.Inverse(
+        pro.plat1, pro.plon1,
+        pro.plat2, pro.plon2
+    )['s12']/1000/pro.step
+    lats = np.linspace(
+        pro.plat1, pro.plat2, int(space)
+    )
+    lons = np.linspace(
+        pro.plon1, pro.plon2, int(space)
+    )
+    dist = [distaz.Inverse(stla,stlo,lats[_i],lons[_i])['s12']/1000 for _i in range(len(lats))]
+    return min(dist)
 
+def min_sta2prof_ori(stla, stlo, pro:Profile):
+    from distaz import distaz
     space = distaz(
         pro.plat1, pro.plon1,
         pro.plat2, pro.plon2
@@ -36,12 +104,8 @@ def min_sta2prof(stla, stlo, pro:Profile):
     lons = np.linspace(
         pro.plon1, pro.plon2, int(space)
     )
-    last = 6370
-    for _i in range(lons.shape[0]):
-        dist = distaz(stla, stlo, lats[_i], lons[_i]).degreesToKilometers()
-        if dist > last:
-            return dist
-    return dist
+    dist = [distaz(stla,stlo,lats[_i],lons[_i]).degreesToKilometers() for _i in range(len(lats))]
+    return min(dist)
 
 def gen_psdm_list(sta_list:str,
                   data_path:str,
@@ -57,10 +121,10 @@ def gen_psdm_list(sta_list:str,
     :return: 在目录下面，生成一个名为sta.lst 的文件，按照psdm 的目标格式进行计算
     """
     try:
-        dtype = {'names': ('station', 'stla', 'stlo'), 'formats': ('U20', 'f4', 'f4')}
+        dtype = {'names': ('station', 'stlo', 'stla'), 'formats': ('U20', 'f4', 'f4')}
         stas, stlos, stlas  = np.loadtxt(sta_list, dtype=dtype, unpack=True, ndmin=1)
     except:
-        raise IOError("需要一个 台站目录\n 格式为\n台站名   stla    stlo")
+        raise IOError("需要一个 台站目录\n 格式为\n台站名   stlo    stla")
 
     try:
         chdir(data_path)
@@ -68,7 +132,7 @@ def gen_psdm_list(sta_list:str,
         raise FileExistsError("检查数据目录")
     lst = open("rfs.lst","w")
     for _i in range(stas.shape[0]):
-        if min_sta2prof(stlas[_i], stlos[_i], pro) > min_sit: continue
+        if min_sta2prof_ori(stlas[_i], stlos[_i], pro) > min_sit: continue
 
 
         # 开始寻找匹配的数据文件
@@ -87,6 +151,7 @@ def gen_psdm_list(sta_list:str,
 
     lst.write("\n\n\n\n\n\n")
     lst.close()
+    return "rfs.lst"
 
 def trans_ccp_profile(pro:Profile):
     """
@@ -94,5 +159,9 @@ def trans_ccp_profile(pro:Profile):
     :param pro:
     :return:
     """
-    dist = distaz(pro.plat1, pro.plon1, pro.plat2, pro.plat2).degreesToKilometers()/2
+    dist = distaz.Inverse(pro.plat1, pro.plon1, pro.plat2, pro.plat2)['s12']/1000/2
     return (pro.plat1+pro.plat2)/2, (pro.plon1+pro.plon2)/2, dist
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
