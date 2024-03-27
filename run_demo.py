@@ -125,7 +125,7 @@ if __name__ == "__main__":
 	prof = Profile("default",
 		# lat1， lon1， lat2，  lon2， slide_val
 			39.2, 106,
-			40,115,
+			40,   115,
 			2)
 	pierc=runner_pierce(prof)
 	stack=runner_ccp_stack(prof,m660q,pierc)

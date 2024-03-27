@@ -1,9 +1,5 @@
 """
-ccp 叠加结果和psdm成像结果还是不要分开先吧。
-可能都有用到。
-
-目前的需要是，从三个数据结构中提取有效信息，
-进行绘图
+这一段代码改写自 张周博士的 GCSRF包，感谢张周博士的工作
 """
 from glob import glob
 from os.path import join
@@ -36,17 +32,7 @@ def plot3_comp(path2PSDM:str,
                pierc:cfg_Pierce_new_n,
                binr:cfg_binr_vary_scan_n,
                hdp:cfg_Hdpmig):
-    # CCP PLOT PART
-    ##################################################################################################
-    # Plot CCP stacking section with bin size and RF numbers at chosen depth
-    # Inputs (parameters set in binr_vary_scan_n.inp):
-    # 1. outfile    -   output file name, no prefix and postfix
-    #                   e.g. stack_*.dat, *_yb.dat, *_num.dat
-    # 2. xlenp      -   profile length (km)
-    # 3. npt        -   output number of time samples in each trace
-    # 4. dx         -   the spacing between bins along the profile (km)
-    # 5. dt         -   time interval (s)
-    # 6. noutd      -   output number in ninw
+
     # 设置字体参数
     config = {"font.family": 'sans-serif',
               "font.size": 22, "mathtext.fontset": 'stix'}
@@ -94,21 +80,23 @@ def plot3_comp(path2PSDM:str,
     ax_00.set_title("Parameters at 100km")
     ax[0].legend(loc=2)
     ax_00.legend(loc=1)
-
+    # 这里修改 CCP的最大值最小值
     im1 = ax[1].pcolor(LonRange, Trange, profile.T,
                         cmap="coolwarm", vmin=-0.1, vmax=0.1)
-    # im1=ax[1].contourf(Xrange,Trange,profile.T)
     cax = add_right_cax(ax[1], pad=0.02, width=0.02)
     cbar = fig.colorbar(im1, cax=cax)
+    # 这里设置色标棒 1 的最大值最小值
     im1.set_clim(-0.1, 0.15)
     ax[1].set_ylim([0, 20])
     ax[1].set_ylabel("T(s)")
     ax[1].invert_yaxis()
     ax[1].set_title("CCP stack section")
+    # 这里修改 偏移成像的 最大值最小值
     im1 = ax[2].pcolormesh(LonRange, Zrange, profile_mig.T,
                     cmap="jet", vmin=-0.1, vmax=0.1)
     cax = add_right_cax(ax[2], pad=0.02, width=0.02)
     cbar = fig.colorbar(im1, cax=cax)
+    # 这里设置色标棒 2 的最大值最小值
     im1.set_clim(-0.1, 0.15)
     ax[2].set_ylim([0, 200])
     ax[2].set_xlabel("Latitute ($\degree$)")
