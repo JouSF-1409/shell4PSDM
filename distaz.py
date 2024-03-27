@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-
+# 这一段功能来自seispy，感谢 xumijian 的移植。
 class distaz:
     """
     c Subroutine to calculate the Great Circle Arc distance

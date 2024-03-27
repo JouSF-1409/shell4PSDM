@@ -15,8 +15,7 @@ Profile = namedtuple("Profile",
                      "pname plat1 plon1 plat2 plon2 step")
 
 import numpy as np
-from geographiclib.geodesic import Geodesic
-distaz = Geodesic.WGS84
+
 from cfgPSDM import cfg_binr_vary_scan_n
 
 
@@ -30,23 +29,44 @@ def get_UTM(Prof:Profile):
     )
 
 def set_prof(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
-
-
+    from geographiclib.geodesic import Geodesic
+    distaz = Geodesic.WGS84
 
     cfg_binr.Descar_la_begin = distaz.Inverse(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2)['s12']/2000
     cfg_binr.Descar_lo_begin = distaz.Inverse(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2)['s12']/2000
 
     dist = distaz.Inverse(Prof.plat1, Prof.plon1,
                   Prof.plat2, Prof.plon2)
-    if dist['azi1'] < 180:
+    az = dist['azi1']
+    if az < 0:
+        az += 360
+    if az < 180:
         cfg_binr.Descar_lo_begin *= -1
-    if dist['azi1'] < 90 or dist['azi1'] > 270:
+    if az < 90 or az > 270:
         cfg_binr.Descar_la_begin *= -1
         cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
     cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
     cfg_binr.Profile_len = dist['s12']/1000
-    cfg_binr.az_min = dist['azi1']
-    cfg_binr.az_max = dist['azi1']
+    cfg_binr.az_min = az
+    cfg_binr.az_max = az
+    return cfg_binr
+
+def set_prof_ori(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
+    from distaz import distaz
+    cfg_binr.Descar_la_begin = distaz(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2).degreesToKilometers()/2
+    cfg_binr.Descar_lo_begin = distaz(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2).degreesToKilometers()/2
+
+    dist = distaz(Prof.plat1, Prof.plon1,
+                  Prof.plat2, Prof.plon2)
+    if dist.baz < 180:
+        cfg_binr.Descar_lo_begin *= -1
+    if dist.baz < 90 or dist.baz > 270:
+        cfg_binr.Descar_la_begin *= -1
+        cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
+    cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
+    cfg_binr.Profile_len = dist.degreesToKilometers()
+    cfg_binr.az_min = dist.baz
+    cfg_binr.az_max = dist.baz
     return cfg_binr
 
 def min_sta2prof(stla, stlo, pro:Profile):
@@ -57,6 +77,8 @@ def min_sta2prof(stla, stlo, pro:Profile):
     :return: 最小距离
     """
     #print(f"stla:{stla}, stlo:{stlo}, pro:{pro}")
+    from geographiclib.geodesic import Geodesic
+    distaz = Geodesic.WGS84
     space = distaz.Inverse(
         pro.plat1, pro.plon1,
         pro.plat2, pro.plon2
@@ -68,6 +90,21 @@ def min_sta2prof(stla, stlo, pro:Profile):
         pro.plon1, pro.plon2, int(space)
     )
     dist = [distaz.Inverse(stla,stlo,lats[_i],lons[_i])['s12']/1000 for _i in range(len(lats))]
+    return min(dist)
+
+def min_sta2prof_ori(stla, stlo, pro:Profile):
+    from distaz import distaz
+    space = distaz(
+        pro.plat1, pro.plon1,
+        pro.plat2, pro.plon2
+    ).degreesToKilometers()/pro.step
+    lats = np.linspace(
+        pro.plat1, pro.plat2, int(space)
+    )
+    lons = np.linspace(
+        pro.plon1, pro.plon2, int(space)
+    )
+    dist = [distaz(stla,stlo,lats[_i],lons[_i]).degreesToKilometers() for _i in range(len(lats))]
     return min(dist)
 
 def gen_psdm_list(sta_list:str,
@@ -95,7 +132,7 @@ def gen_psdm_list(sta_list:str,
         raise FileExistsError("检查数据目录")
     lst = open("rfs.lst","w")
     for _i in range(stas.shape[0]):
-        if min_sta2prof(stlas[_i], stlos[_i], pro) > min_sit: continue
+        if min_sta2prof_ori(stlas[_i], stlos[_i], pro) > min_sit: continue
 
 
         # 开始寻找匹配的数据文件
@@ -114,6 +151,7 @@ def gen_psdm_list(sta_list:str,
 
     lst.write("\n\n\n\n\n\n")
     lst.close()
+    return "rfs.lst"
 
 def trans_ccp_profile(pro:Profile):
     """
