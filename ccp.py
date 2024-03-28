@@ -44,7 +44,7 @@ def set_prof(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
         cfg_binr.Descar_lo_begin *= -1
     if az < 90 or az > 270:
         cfg_binr.Descar_la_begin *= -1
-        cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
+    cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
     cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
     cfg_binr.Profile_len = dist['s12']/1000
     cfg_binr.az_min = az
@@ -62,7 +62,7 @@ def set_prof_ori(Prof:Profile, cfg_binr:cfg_binr_vary_scan_n):
         cfg_binr.Descar_lo_begin *= -1
     if dist.baz < 90 or dist.baz > 270:
         cfg_binr.Descar_la_begin *= -1
-        cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
+    cfg_binr.Descar_la_end = cfg_binr.Descar_la_begin
     cfg_binr.Descar_lo_end = cfg_binr.Descar_lo_begin
     cfg_binr.Profile_len = dist.degreesToKilometers()
     cfg_binr.az_min = dist.baz
