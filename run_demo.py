@@ -1,5 +1,6 @@
 """
-目的是跑通 王旭博士给的示例数据
+目的是跑通 王旭博士给的示例数据，
+包含了shell4PSDM 的最小逻辑，包括传递几个配置文件中重复的部分
 """
 
 from os.path import join
@@ -9,21 +10,15 @@ from util import runner_psdm
 
 from cfgPSDM import cfg_binr_vary_scan_n,cfg_Hdpmig,cfg_m660q,cfg_Pierce_new_n
 
-
-#path2PSDM="/home/project/ChinArray3-PRF/psdm/psdm_major"
+# 在这里配置psdm_major 的路径
 path2PSDM = "/home/jousk/project/psdm_major/"
-psdm_bin = join(path2PSDM, "bin")
-psdm_default_cfg = join(path2PSDM, "model")
-psdm_cfg_history = join(path2PSDM, "history")
-psdm_trans = join(path2PSDM, "trans")
 timestap = time.now().strftime("%Y.%m.%d.%H.%M.%S")
 
 # velmod, 速度模型的格式参考velmod.py里的内容，
 # 在这里初始化velmod, 但这里我们使用默认的cwbq模型
-velmod_path=join(path2PSDM,"model","cwbq")
+velmod_path="../model/cwbq"
 
 # 数据位置
-#prj_dir = "/home/project/ChinArray3-PRF/"
 prj_dir = "/home/jousk/project/data/"
 data_dir = "f2p5_dt01_s1"
 
@@ -75,7 +70,6 @@ def runner_ccp_stack(prof:Profile,
 	binr = set_prof_ori(prof,binr)
 	binr.UTM_zone = get_UTM(prof)
 
-
 	# 数据类型设置
 	binr.out_trace_npts = 800
 
@@ -91,7 +85,7 @@ def runner_ccp_stack(prof:Profile,
 	binr.pierc_out = pierce.pierc_out
 	# ccp的输出文件
 	# 这里不能使用相对路径，因为
-	# 这里不能使用相对路径或者绝对路径，因为结果 会在bin 文件夹下面以stack_{outputfile}.dat 为名称
+	# 这里不能使用相对路径或者绝对路径，因为结果 会在bin 文件夹下面以stack_{outputfile}.dat 为名称 输出不定数目的文件，具体数目视 cfg文件所定义。
 	binr.outpufile = f"ccp_stack_{timestap}"
 
 	runner_psdm(path2PSDM,binr,timestap)
@@ -110,6 +104,7 @@ def runner_hdp(prof:Profile,
 	## 剖面
 	hdp.nxmod = int(binr.Profile_len/binr.bins_step)+1
 	hdp.ntrace = hdp.nxmod
+	hdp.dt = binr.out_trace_dt
 	hdp.dx = binr.bins_step
 	hdp.nt = binr.out_trace_npts
 	runner_psdm(path2PSDM, hdp,timestap)

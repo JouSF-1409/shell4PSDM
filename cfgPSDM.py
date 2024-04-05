@@ -130,6 +130,7 @@ class cfg_Hdpmig:
     ifreqindl: float = 0
     ifreqindr: float = 40
     # 道数， 深度， 剖面与深度方向上，大于道数和深度的最小2的整数倍点，
+    # 主要修改的是 nzmod和 nxmod
     nxmod: int = 351
     nzmod: int = 800
     nx: int = 1024
