@@ -34,7 +34,7 @@ data_dir = "f2p5_dt01_s1"
 # cirl+ 左键 点击，查看每个参数的含意
 def runner_m660q():
 	m660q = cfg_m660q()
-	m660q.m660q_out = join(psdm_bin, f"m660.Pcs.out")
+	m660q.m660q_out =  f"m660.Pcs.out"
 	runner_psdm(path2PSDM, m660q)
 	return m660q
 
@@ -43,6 +43,7 @@ def runner_m660q():
 def runner_pierce(prof:Profile):
 	from ccp import gen_psdm_list
 	pierce = cfg_Pierce_new_n()
+	pierce.parser(prof)
 
 	pierce.name_lst = "datalist.txt"
 	# 筛选距离台站300km 范围内的数据进行ccp叠加
@@ -53,10 +54,7 @@ def runner_pierce(prof:Profile):
 	pierce.out_npts = 800
 	pierce.rfdata_path = prj_dir
 	pierce.name_sub = data_dir
-	pierce.center_la = (prof.plat1+prof.plat2)/2
-	pierce.center_lo = (prof.plon1+prof.plon2)/2
-	pierce.pierc_out = join(psdm_bin,
-			    f"pierce_{timestap}.out")
+	pierce.pierc_out = f"pierce_{timestap}.out"
 	runner_psdm(path2PSDM,pierce,timestap)
 	return pierce
 
@@ -64,25 +62,13 @@ def runner_pierce(prof:Profile):
 def runner_ccp_stack(prof:Profile,
                      m660q:cfg_m660q,
                      pierce:cfg_Pierce_new_n):
-
+	# 初始化配置文件，继承上一步的参数
+	# 并计算剖面相关的参数
 	binr = cfg_binr_vary_scan_n()
-	## 设置剖面， 起点，长度，方位角
-	binr = set_prof_ori(prof,binr)
-	binr.UTM_zone = get_UTM(prof)
+	binr.paser(m660q,pierce,prof)
 
 	# 数据类型设置
 	binr.out_trace_npts = 800
-
-	# 叠加窗设置
-	binr.bins_step = prof.step
-
-	# 叠加设置,归一化和动校正在这里标注
-	#binr.moveout_flag = 0
-	## 输入输出文件
-	# m660q的输出文件
-	binr.timefile = m660q.m660q_out
-	# pierc 的输出文件
-	binr.pierc_out = pierce.pierc_out
 	# ccp的输出文件
 	# 这里不能使用相对路径，因为
 	# 这里不能使用相对路径或者绝对路径，因为结果 会在bin 文件夹下面以stack_{outputfile}.dat 为名称 输出不定数目的文件，具体数目视 cfg文件所定义。
@@ -96,17 +82,12 @@ def runner_ccp_stack(prof:Profile,
 def runner_hdp(prof:Profile,
                binr:cfg_binr_vary_scan_n):
 	hdp = cfg_Hdpmig()
+	hdp.paser(binr)
 	## 输入输出文件
 	# ccp叠加的输出结果
 	hdp.tx_data = f"stack_{binr.outpufile}.dat"
 	# 偏移叠加结果
 	hdp.migdata = f"mig_{timestap}.dat"
-	## 剖面
-	hdp.nxmod = int(binr.Profile_len/binr.bins_step)+1
-	hdp.ntrace = hdp.nxmod
-	hdp.dt = binr.out_trace_dt
-	hdp.dx = binr.bins_step
-	hdp.nt = binr.out_trace_npts
 	runner_psdm(path2PSDM, hdp,timestap)
 	return hdp
 
