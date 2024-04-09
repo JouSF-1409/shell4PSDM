@@ -6,6 +6,7 @@ from dataclasses import dataclass
 使用dataclass类来限制参数的具体类型。
 setxxx函数本意通过解包来实现比较方便的格式化，未来可能放在类的__str__方法里面
 """
+from ccp import Profile
 
 
 @dataclass
@@ -15,11 +16,11 @@ class cfg_m660q:
     m660q_out: str = "m660q_cwbq_Pcs1.out"  # 输出文件名
     iflat: int = 1  # 是否做展平变换，0表不做，1表做
     itype: int = 1  # 计算震相的类型 >0表示Ps，<0 表示Sp
+
     # ,"LayerCount",
 
     def __str__(self):
         return _str_m660q(self)
-
 
 
 @dataclass
@@ -49,12 +50,17 @@ class cfg_Pierce_new_n:
     num_sub: int = 1  # 项目文件夹数量
     name_sub: str = "f2p5_dt01_s1"  # 项目文件夹名称
     name_lst: str = "datalist.txt"  # 项目文件夹内 台站目录 的文件名，台站目录格式为
+
     # 台站名\n接收函数数量\n接收函数的文件名\n...\n 空行\n 新台站....
     # 最后为台站总数
 
+    def parser(self, pro: Profile):
+        # 一些通用的逻辑 经过测试，写到paser里
+        self.center_la = (pro.plat1 + pro.plat2) / 2
+        self.center_lo = (pro.plon1 + pro.plon2) / 2
+
     def __str__(self):
         return _str_pierce_new_n(self)
-
 
 
 @dataclass
@@ -113,6 +119,37 @@ class cfg_binr_vary_scan_n:
     # 转换点数据信息的文件名，从pierce_new_n 这一步获得。
     pierc_out: str = "pierc_cwbq_nf2p5_wncc-s1_Pcs.dat"
 
+    def set_prof(self, Prof: Profile):
+        """
+        设置剖面相关的逻辑
+        """
+        from distaz import distaz
+        from ccp import get_UTM
+        self.Descar_la_begin = distaz(Prof.plat1, Prof.plon2, Prof.plat2, Prof.plon2).degreesToKilometers() / 2
+        self.Descar_lo_begin = distaz(Prof.plat1, Prof.plon1, Prof.plat1, Prof.plon2).degreesToKilometers() / 2
+
+        dist = distaz(Prof.plat1, Prof.plon1,
+                      Prof.plat2, Prof.plon2)
+        if dist.baz < 180:
+            self.Descar_lo_begin *= -1
+        if dist.baz < 90 or dist.baz > 270:
+            self.Descar_la_begin *= -1
+        self.Descar_la_end = self.Descar_la_begin
+        self.Descar_lo_end = self.Descar_lo_begin
+        self.Profile_len = dist.degreesToKilometers()
+        self.az_min = dist.baz
+        self.az_max = dist.baz
+        # 设置utm 区域
+        self.UTM_zone = get_UTM(Prof)
+
+    def paser(self, m660q: cfg_m660q, pierce: cfg_Pierce_new_n, pro: Profile):
+        # 设置剖面相关的逻辑
+        self.set_prof(pro)
+        # 叠加步长的设置
+        self.bins_step = pro.step
+        self.timefile = m660q.m660q_out
+        self.pierc_out = pierce.pierc_out
+
     def __str__(self):
         return _str_binr_vary_scan_n(self)
 
@@ -161,13 +198,24 @@ class cfg_Hdpmig:
     intrace: int = 1
     itrfirst: int = 1
 
+    def paser(self,binr:cfg_binr_vary_scan_n):
+        ## 剖面
+        self.nxmod = int(binr.Profile_len / binr.bins_step) + 1
+        self.ntrace = self.nxmod
+        if self.nxmod > self.nx:
+            from util import next_pow
+            self.nx = next_pow(self.nxmod)
+        self.dt = binr.out_trace_dt
+        self.dx = binr.bins_step
+        self.nt = binr.out_trace_npts
+
     def __str__(self):
         return _str_hdpming(self)
 
 
 def _str_m660q(cfg):
     return \
-f"* velocity model file\n\
+        f"* velocity model file\n\
 {cfg.ref_model}\n\
 * ray file\n\
 {cfg.ray}\n\
@@ -180,7 +228,7 @@ f"* velocity model file\n\
 
 def _str_pierce_new_n(cfg):
     return \
-f"* output file name: iaj\n\
+        f"* output file name: iaj\n\
 {cfg.pierc_out}\n\
 * the coordinate center of line: evla0,evlo0\n\
 {cfg.center_la:.1f}, {cfg.center_lo:.1f}\n\
@@ -205,7 +253,7 @@ f"* output file name: iaj\n\
 
 def _str_binr_vary_scan_n(cfg):
     return \
-f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,endla0,endlo0,dsp\n\
+        f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,endla0,endlo0,dsp\n\
 {cfg.Descar_la_begin:.3f},{cfg.Descar_lo_begin:.3f},{cfg.Descar_la_end:.3f},{cfg.Descar_lo_end:.3f},{cfg.Descar_step}\n\
 * profile length and azimuth range and interval: xlenp,alphab,alphae,dalp\n\
 {cfg.Profile_len}, {cfg.az_min}, {cfg.az_max}, {cfg.az_step}\n\
@@ -245,7 +293,7 @@ f"* begin and end coordinate of start point, point interval(km): begla0,beglo0,e
 
 def _str_hdpming(cfg):
     return \
-f"* imethod (phshift=0; phscreen=1, hybscreen: else),irefvel,vscale \n\
+        f"* imethod (phshift=0; phscreen=1, hybscreen: else),irefvel,vscale \n\
 {cfg.imethod}      {cfg.irefvel}     {cfg.vscale}\n\
 * fmin, fmax (Minimum and maximum frequencies), ifreqindl, ifreqindr\n\
 {cfg.fmin}    {cfg.fmax}    {cfg.ifreqindl}    {cfg.ifreqindr}\n\
