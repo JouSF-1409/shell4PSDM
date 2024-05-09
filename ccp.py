@@ -10,15 +10,27 @@ from glob import glob
 from os import chdir
 from math import floor
 from collections import namedtuple
+from datetime import datetime as time
 # 测线形状的类
 Profile = namedtuple("Profile",
-                     "pname plat1 plon1 plat2 plon2 step")
+                     "pname plat1 plon1 plat2 plon2 step stamp")
 
 import numpy as np
 
 from cfgPSDM import cfg_binr_vary_scan_n
 
-
+def initProf(name, pos):
+    if len(pos) == 5:
+        timestap=f"{name}_{time.now().strftime('%Y.%m.%d.%H.%M.%S')}"
+        return Profile(
+            name,
+            # lat1， lon1， lat2，  lon2， slide_val
+            float(pos[1]), float(pos[0]), float(pos[3]),float(pos[2]),
+            2,
+            timestap,
+        )
+    else:
+        raise ValueError(f"try another init function to init prof")
 def get_UTM(Prof:Profile):
     """
     >>> get_UTM(Profile("a", 32.5, 115.6,32.5,115.6,2))
@@ -139,7 +151,7 @@ def gen_psdm_list(sta_list:str,
         # 匹配条件是需要重点修改的内容
         nums=0
         rf_lst = []
-        for _tr in glob(f"*/*{stas[_i]}*ri"):
+        for _tr in glob(f"{stas[_i]}/*{stas[_i]}*ri"):
             _tr = _tr.split('/')[1]
             nums +=1
             rf_lst.append(_tr)

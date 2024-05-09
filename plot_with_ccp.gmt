@@ -1,0 +1,29 @@
+#!/bin/bash
+
+cfg=$1;source $cfg
+
+normal=13.4c/6.2
+half=13.4c/2.4c
+gmt begin $prof png,pdf
+
+    gmt subplot begin 4x1 -Fs13.4c/5.2c -SCb+t
+# 第一个子图画地形起伏与叠加窗内的数量
+gmt subplot set 0
+
+    gmt basemap -JX$half $topoR $topoB
+    gmt plot -JX$half $topo -W1.5p,black
+    gmt basemap -JX$half $countR $countB
+    gmt plot -JX$half $count -W1.5p,red
+#第二个子图画叠加的结果
+gmt subplot set1
+  gmt basemap -JX$normalc $binrR $binrB
+  #                       倍率   正则红色  负则
+  gmt wiggle $binr -Z0.5 -Gred+p -G0/0/255+n  -W0.02p
+# 这里画ccp 的功能
+gmt subplot set2
+  gmt grdimage -JX$normalc $ccp $ccpR $ccpB -C$cpt_ccp
+gmt subplot set3
+  gmt grdimage -JX$normalc $psdm $psdmR $psdmB -C$cpt_psdm
+
+gmt subplot end
+gmt end
