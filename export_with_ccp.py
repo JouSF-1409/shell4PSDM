@@ -51,6 +51,10 @@ class save2GRD():
         self.export_wiggle()
         self.export_psdm()
         self.export_plot_cfg()
+    def limit_parser(self):
+        self.export_wiggle()
+        self.export_psdm()
+        self.export_limit_plot_cfg()
     def export_topo(self):
         """
         初始化topo 文件
@@ -213,3 +217,30 @@ cpt_ccp=ccp.cpt\n\
 cpt_psdm=ccp.cpt"
         )
 
+    def export_limit_plot_cfg(self):
+        if np.abs(self.prof.plon1 - self.prof.plon2) < np.abs(self.prof.plat1 - self.prof.plat2):
+            R=f"{self.prof.plat1}/{self.prof.plat2}"
+            t="latitude"
+        else:
+            self.siteRange=np.linspace(
+                self.prof.plon1, self.prof.plon2, self.cfg_hdp.nxmod)
+
+            R=f"{self.prof.plon1}/{self.prof.plon2}"
+            t="longitude"
+        with open(join(self.path2PSDM, "trans", f"{self.prof.pname}.cfg"), "w") as _f:
+            _f.write(
+f"prof={self.prof.pname}\ntopo={self.topo}\ncount={self.count}\n\
+binr={self.wiggle}\nccp={self.ccp}\npsdm={self.psdm}\n\n\
+topoR=NULL\n\
+topoB=NULL\n\
+countR='-R{R}/{self.min_bin - (self.max_bin - self.min_bin) * 0.07}/{self.max_bin + (self.max_bin - self.min_bin) * 0.07}'\n\
+countB='-Bya350f200 -BE'\n\
+binrR=-R{R}/-30/0\n\
+binrB='-Bya10f5g5+ltime(s) -Bxf1g1 -BSWrt'\n\
+ccpR=NULL\n\
+ccpB=NULL\n\
+psdmR=$ccpR\n\
+psdmB='-Bya50f50g50+lDepth(km) -Bxf1g1+l{t}(@[\degree@[)'\n\
+cpt_ccp=NULL\n\
+cpt_psdm=ccp.cpt"
+            )

@@ -77,60 +77,21 @@ def runner_ccp_stack(prof: Profile, m660q: cfg_m660q, pierce: cfg_Pierce_new_n):
 
 ## 第四步 Hidpim.x 偏移成像
 # 这里改动比较少，多尝试一翻
-def runner_hdp_exam(prof: Profile, binr: cfg_binr_vary_scan_n):
-    hdp = cfg_Hdpmig()
-    hdp.paser(binr)
-
-    fmins = (0.01, 0.03, 0.05)
-    fmaxs = (0.4, 0.5, 0.7, 0.9, 1)
-    ifreql = (5, 10, 20, 40)
-    ifreqr = (5, 10, 20, 40)
-
-    for fmin in fmins:
-        for fmax in fmaxs:
-            for ql in ifreql:
-                for qr in ifreqr:
-                    try:
-                        hdp.fmin = fmin
-                        hdp.fmax = fmax
-                        hdp.ifreqindl = ql
-                        hdp.ifreqindr = qr
-
-                        hdp.tx_data = f"stack_{binr.outpufile}.dat"
-                        # 偏移叠加结果
-                        hdp.migdata = f"mig_{prof.pname}_bp_c_{fmin}_{fmax}_Dl_{ql}_Dr_{qr}.dat"
-                        runner_psdm(path2PSDM, hdp, timestap)
-                    except:
-                        continue
-                    yield hdp
-
-
-    # hdp.fmin = 0.1
-    hdp.fmax = 0.5
-    # hdp.ifreqindl = 20
-    # hdp.ifreqindr = 40
-
-    hdp.nxleft = 40
-    hdp.nxright = 40
-
-    ## 输入输出文件
-    # ccp叠加的输出结果
-    return hdp
 def runner_hdp(prof: Profile, binr: cfg_binr_vary_scan_n):
     hdp = cfg_Hdpmig()
     hdp.paser(binr)
-
 
     hdp.fmin = 0.01
     hdp.fmax = 1
     hdp.ifreqindl = 10
     hdp.ifreqindr = 5
+    prof.stamp = f"bp_c_{hdp.fmin}_{hdp.fmax}_Dl_{hdp.ifreqindl}_Dr_{hdp.ifreqindr}"
 
    # hdp.nxleft = 40
    # hdp.nxright = 40
     hdp.tx_data = f"stack_{binr.outpufile}.dat"
     # 偏移叠加结果
-    hdp.migdata = f"mig_{prof.pname}_bp_c_{hdp.fmin}_{hdp.fmax}_Dl_{hdp.ifreqindl}_Dr_{hdp.ifreqindr}.dat"
+    hdp.migdata = f"mig_{prof.pname}_{prof.stamp}.dat"
     runner_psdm(path2PSDM, hdp, timestap)
 
     ## 输入输出文件
@@ -138,43 +99,6 @@ def runner_hdp(prof: Profile, binr: cfg_binr_vary_scan_n):
     return hdp
 
 
-def compare():
-    # 这段是比较与前人的工作
-    from profList import preparelist
-
-    # m660q 只跑一遍
-    m660q = runner_m660q()
-    from plot_with_ccp import plot3_comp
-
-    # from plot_like_zhang import plot3_comp
-
-    timestap = f"default_{time.now().strftime('%Y.%m.%d.%H.%M.%S')}"
-    # 设置剖面特征，Ybin有点复杂，这里不处理。
-    # 如果想要修改，使用全局变量进行介入
-    for name, info in preparelist.items():
-        # 记录每个剖面的名称，程序运行的时间
-        try:
-            # if name == 'ff' or name == 'gg':
-            timestap = f"{name}_{time.now().strftime('%Y.%m.%d.%H.%M.%S')}"
-            # 设置剖面特征，Ybin有点复杂，这里不处理。
-            # 如果想要修改，使用全局变量进行介入
-            prof = Profile(
-                name,
-                # lat1， lon1， lat2，  lon2， slide_val
-                float(info[5]),
-                float(info[6]),
-                float(info[7]),
-                float(info[8]),
-                float(info[4]),
-                timestap,
-            )
-            pierc = runner_pierce(prof)
-            stack = runner_ccp_stack(prof, m660q, pierc)
-            hdp = runner_hdp(prof, stack)
-            # 进行绘图
-            plot3_comp(path2PSDM, prof, m660q, pierc, stack, hdp)
-        except:
-            continue
 
 
 def myProf():
